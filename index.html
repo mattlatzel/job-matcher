@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CV Job Matcher</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f8f9fc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #1a202c;
+      --muted: #718096;
+      --accent: #4f46e5;
+      --accent-light: #eef2ff;
+      --green: #059669;
+      --green-light: #ecfdf5;
+      --yellow: #d97706;
+      --yellow-light: #fffbeb;
+      --red: #dc2626;
+      --red-light: #fef2f2;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.04);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header .logo {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 18px;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 700; color: var(--text); }
+    header p  { font-size: .85rem; color: var(--muted); }
+
+    main { max-width: 760px; margin: 0 auto; padding: 40px 24px; }
+
+    /* ── Upload card ── */
+    #upload-section { text-align: center; }
+    #upload-section h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
+    #upload-section .subtitle { color: var(--muted); margin-bottom: 32px; font-size: .95rem; }
+
+    #drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 56px 32px;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      background: var(--surface);
+    }
+    #drop-zone:hover, #drop-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+    #drop-zone .icon { font-size: 2.5rem; color: var(--accent); margin-bottom: 16px; }
+    #drop-zone .primary { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+    #drop-zone .secondary { font-size: .85rem; color: var(--muted); }
+    #file-input { display: none; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      border: none;
+      font-size: .9rem; font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { opacity: .9; }
+    .btn-outline { background: white; color: var(--accent); border: 1.5px solid var(--accent); }
+    .btn-outline:hover { background: var(--accent-light); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    #upload-btn { margin-top: 20px; }
+
+    /* ── Progress ── */
+    #progress-section { display: none; }
+    .progress-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 40px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
+    .progress-sub { color: var(--muted); font-size: .9rem; }
+
+    .steps { display: flex; justify-content: center; gap: 0; margin-top: 32px; }
+    .step {
+      display: flex; flex-direction: column; align-items: center;
+      flex: 1; max-width: 160px; position: relative;
+    }
+    .step:not(:last-child)::after {
+      content: '';
+      position: absolute; top: 14px; left: calc(50% + 14px);
+      width: calc(100% - 28px); height: 2px;
+      background: var(--border);
+    }
+    .step:not(:last-child).done::after { background: var(--accent); }
+    .step-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700;
+      color: var(--muted);
+      position: relative; z-index: 1;
+      transition: background .3s, color .3s;
+    }
+    .step.active .step-dot  { background: var(--accent); color: white; }
+    .step.done .step-dot    { background: var(--green);  color: white; }
+    .step-label { font-size: .75rem; color: var(--muted); margin-top: 6px; text-align: center; }
+    .step.active .step-label { color: var(--accent); font-weight: 600; }
+    .step.done .step-label   { color: var(--green); }
+
+    /* ── Results ── */
+    #results-section { display: none; }
+    .results-header { margin-bottom: 24px; }
+    .results-header h2 { font-size: 1.4rem; font-weight: 700; }
+    .results-header p  { color: var(--muted); font-size: .9rem; margin-top: 4px; }
+
+    .job-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      display: flex; gap: 20px;
+      transition: box-shadow .2s;
+    }
+    .job-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+
+    .score-badge {
+      flex-shrink: 0;
+      width: 68px; height: 68px;
+      border-radius: 50%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-weight: 700;
+    }
+    .score-badge .pct  { font-size: 1.4rem; line-height: 1; }
+    .score-badge .pct-label { font-size: .6rem; text-transform: uppercase; letter-spacing: .05em; opacity: .8; }
+
+    .score-95 { background: #dcfce7; color: #15803d; }
+    .score-90 { background: #dcfce7; color: #15803d; }
+    .score-85 { background: #dcfce7; color: #15803d; }
+    .score-80 { background: #fef9c3; color: #854d0e; }
+
+    .job-body { flex: 1; min-width: 0; }
+    .job-title { font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+    .job-meta  { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .job-meta span {
+      font-size: .8rem; color: var(--muted);
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: .72rem; font-weight: 600;
+      background: var(--accent-light); color: var(--accent);
+    }
+    .reason { font-size: .88rem; color: #4a5568; line-height: 1.5; margin-bottom: 14px; }
+    .job-footer { display: flex; align-items: center; gap: 12px; }
+    .apply-btn {
+      text-decoration: none;
+      padding: 7px 18px;
+      border-radius: 7px;
+      background: var(--accent);
+      color: white;
+      font-size: .85rem; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: opacity .15s;
+    }
+    .apply-btn:hover { opacity: .88; }
+    .posted-date { font-size: .78rem; color: var(--muted); }
+
+    /* ── Slider ── */
+    .slider-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .slider-label { font-size: .85rem; color: var(--muted); white-space: nowrap; }
+    .slider-value {
+      font-size: .95rem; font-weight: 700; color: var(--accent);
+      min-width: 42px; text-align: right;
+    }
+    input[type=range] {
+      flex: 1; accent-color: var(--accent); cursor: pointer; height: 4px;
+    }
+    .slider-count { font-size: .8rem; color: var(--muted); white-space: nowrap; }
+
+    /* ── Match breakdown ── */
+    .breakdown { margin: 10px 0; display: flex; flex-direction: column; gap: 6px; }
+    .breakdown-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .breakdown-label { font-size: .72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--muted); min-width: 56px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: .76rem; font-weight: 600;
+      border-radius: 99px; padding: 3px 10px;
+    }
+    .chip-match   { background: #dcfce7; color: #166534; }
+    .chip-miss    { background: #fef9c3; color: #854d0e; }
+    .chip-gap     { background: #fff1f2; color: #9f1239; }
+    .chip-strength{ background: #eff6ff; color: #1e40af; }
+
+    /* ── Salary chip ── */
+    .salary-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: .78rem; font-weight: 600;
+      color: var(--green); background: var(--green-light);
+      border-radius: 99px; padding: 2px 9px;
+    }
+
+    /* ── Load more / no results ── */
+    #load-more-wrap { text-align: center; margin-top: 8px; }
+    #no-results {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 48px 32px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    #no-results .icon { font-size: 2.5rem; margin-bottom: 12px; }
+    #no-results h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+    #no-results p  { color: var(--muted); font-size: .9rem; }
+
+    /* ── Profile chip ── */
+    #profile-bar {
+      background: var(--accent-light);
+      border: 1px solid #c7d2fe;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      font-size: .88rem;
+      display: flex; align-items: center; gap: 10px;
+    }
+    #profile-bar i { color: var(--accent); }
+    .profile-text { color: #3730a3; }
+
+    /* ── Gap analysis tile ── */
+    #gap-tile {
+      background: var(--surface);
+      border: 1px solid #e0e7ff;
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+    #gap-tile h3 {
+      font-size: .95rem; font-weight: 700; margin-bottom: 4px; color: var(--accent);
+      display: flex; align-items: center; gap: 8px;
+    }
+    #gap-tile .gap-sub { font-size: .8rem; color: var(--muted); margin-bottom: 14px; }
+    .gap-item { margin-bottom: 14px; }
+    .gap-item:last-child { margin-bottom: 0; }
+    .gap-title { font-weight: 700; font-size: .88rem; color: var(--text); margin-bottom: 2px; }
+    .gap-detail { font-size: .83rem; color: var(--muted); margin-bottom: 3px; }
+    .gap-action {
+      font-size: .83rem; color: #1d4ed8;
+      background: #eff6ff; border-radius: 6px;
+      padding: 4px 10px; display: inline-block; margin-top: 2px;
+    }
+
+    /* ── Reset link ── */
+    #restart-link {
+      display: block; text-align: center;
+      margin-top: 32px;
+      color: var(--muted); font-size: .85rem; cursor: pointer;
+    }
+    #restart-link:hover { color: var(--accent); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><i class="fa-solid fa-briefcase"></i></div>
+  <div>
+    <h1>CV Job Matcher</h1>
+    <p>AI-powered job matching — finds roles that fit your actual experience</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── Upload ── -->
+  <section id="upload-section">
+    <h2>Find your perfect job match</h2>
+    <p class="subtitle">Upload your CV and we'll find roles where your experience genuinely fits — no keyword tricks.</p>
+
+    <div id="drop-zone">
+      <div class="icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+      <div class="primary">Drop your CV here</div>
+      <div class="secondary">PDF, DOCX, or TXT · Max 10 MB</div>
+      <input type="file" id="file-input" accept=".pdf,.docx,.txt" />
+    </div>
+
+    <div id="file-name-row" class="hidden" style="margin-top:12px; color: var(--muted); font-size:.88rem; text-align:center;"></div>
+
+    <button class="btn btn-primary" id="upload-btn" disabled>
+      <i class="fa-solid fa-magnifying-glass"></i> Find Matching Jobs
+    </button>
+  </section>
+
+  <!-- ── Progress ── -->
+  <section id="progress-section">
+    <div class="progress-card">
+      <div class="spinner"></div>
+      <div class="progress-title" id="progress-title">Starting…</div>
+      <div class="progress-sub" id="progress-sub">This takes about 30–60 seconds</div>
+
+      <div class="steps" style="margin-top: 32px;">
+        <div class="step" id="step-1">
+          <div class="step-dot">1</div>
+          <div class="step-label">Reading CV</div>
+        </div>
+        <div class="step" id="step-2">
+          <div class="step-dot">2</div>
+          <div class="step-label">Finding Jobs</div>
+        </div>
+        <div class="step" id="step-3">
+          <div class="step-dot">3</div>
+          <div class="step-label">AI Scoring</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Results ── -->
+  <section id="results-section">
+
+    <div class="results-header">
+      <h2>Your best matches</h2>
+      <p id="results-summary"></p>
+    </div>
+
+    <div id="gap-tile" class="hidden">
+      <h3><i class="fa-solid fa-triangle-exclamation"></i> CV Gap Analysis</h3>
+      <div class="gap-sub">Based on recurring requirements across your matched London jobs</div>
+      <div id="gap-list"></div>
+    </div>
+
+    <div class="slider-wrap">
+      <span class="slider-label">Min match</span>
+      <input type="range" id="threshold-slider" min="50" max="95" value="70" step="5" />
+      <span class="slider-value" id="threshold-value">70%</span>
+      <span class="slider-count" id="threshold-count"></span>
+    </div>
+
+    <div id="profile-bar" class="hidden">
+      <i class="fa-solid fa-user-tie"></i>
+      <span class="profile-text" id="profile-text"></span>
+    </div>
+
+    <div id="jobs-list"></div>
+
+    <div id="no-results" class="hidden">
+      <div class="icon">😕</div>
+      <h3>No strong matches found right now</h3>
+      <p>We couldn't find jobs with 80%+ fit this time. The job market may not have open roles that align closely with your background today — try again in a few days.</p>
+    </div>
+
+    <div id="load-more-wrap" class="hidden">
+      <button class="btn btn-outline" id="load-more-btn">
+        <i class="fa-solid fa-chevron-down"></i> Load 10 more
+      </button>
+    </div>
+
+    <div id="restart-link" onclick="restart()">
+      <i class="fa-solid fa-rotate-left"></i> Start over with a different CV
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let sessionId  = null;
+  let pollTimer  = null;
+  let profile    = null;
+  let allJobs    = [];   // all scored jobs from backend
+  let visibleN   = 10;  // how many we're currently showing
+
+  // ── DOM refs ──────────────────────────────────────────────────────────────
+  const dropZone        = document.getElementById('drop-zone');
+  const fileInput       = document.getElementById('file-input');
+  const fileNameRow     = document.getElementById('file-name-row');
+  const uploadBtn       = document.getElementById('upload-btn');
+  const uploadSection   = document.getElementById('upload-section');
+  const progressSection = document.getElementById('progress-section');
+  const resultsSection  = document.getElementById('results-section');
+  const progressTitle   = document.getElementById('progress-title');
+  const progressSub     = document.getElementById('progress-sub');
+  const jobsList        = document.getElementById('jobs-list');
+  const resultsSummary  = document.getElementById('results-summary');
+  const noResults       = document.getElementById('no-results');
+  const loadMoreWrap    = document.getElementById('load-more-wrap');
+  const loadMoreBtn     = document.getElementById('load-more-btn');
+  const profileBar      = document.getElementById('profile-bar');
+  const profileText     = document.getElementById('profile-text');
+  const gapTile         = document.getElementById('gap-tile');
+  const gapList         = document.getElementById('gap-list');
+  const slider          = document.getElementById('threshold-slider');
+  const sliderValue     = document.getElementById('threshold-value');
+  const sliderCount     = document.getElementById('threshold-count');
+
+  // ── Upload / drag-drop ────────────────────────────────────────────────────
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0]; if (f) setFile(f);
+  });
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+  function setFile(f) {
+    fileInput._file = f;
+    fileNameRow.textContent = `📄  ${f.name}  (${(f.size / 1024).toFixed(0)} KB)`;
+    fileNameRow.classList.remove('hidden');
+    uploadBtn.disabled = false;
+  }
+
+  uploadBtn.addEventListener('click', startAnalysis);
+
+  // ── Slider ────────────────────────────────────────────────────────────────
+  slider.addEventListener('input', () => {
+    sliderValue.textContent = slider.value + '%';
+    visibleN = 10;
+    renderJobs();
+  });
+
+  // ── Start analysis ────────────────────────────────────────────────────────
+  async function startAnalysis() {
+    const file = fileInput._file || fileInput.files[0];
+    if (!file) return;
+    uploadBtn.disabled = true;
+    show('progress'); setStep(1);
+
+    const form = new FormData();
+    form.append('file', file);
+    let res;
+    try { res = await fetch('/api/analyze', { method: 'POST', body: form }); }
+    catch(e) { alert('Server not reachable. Is the backend running?'); show('upload'); return; }
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+      alert('Error: ' + (err.detail || 'Something went wrong'));
+      show('upload'); return;
+    }
+    sessionId = (await res.json()).session_id;
+    pollTimer = setInterval(pollStatus, 2000);
+  }
+
+  // ── Polling ───────────────────────────────────────────────────────────────
+  const STATUS_LABELS = {
+    starting:           ['Reading your CV…',        'Extracting your professional profile'],
+    extracting_profile: ['Reading your CV…',        'Understanding your experience and skills'],
+    fetching_jobs:      ['Searching job boards…',   'Querying live London listings'],
+    scoring:            ['AI scoring in progress…', 'Reasoning about fit — not just keywords'],
+    done:               ['All done!',               ''],
+    error:              ['Something went wrong',    ''],
+  };
+  const STATUS_STEP = { starting:1, extracting_profile:1, fetching_jobs:2, scoring:3, done:3 };
+
+  async function pollStatus() {
+    let data;
+    try { const r = await fetch(`/api/status/${sessionId}`); data = await r.json(); } catch(e) { return; }
+    const [title, sub] = STATUS_LABELS[data.status] || ['Processing…', ''];
+    progressTitle.textContent = title;
+    if (sub) progressSub.textContent = sub;
+    setStep(STATUS_STEP[data.status] || 1, data.status);
+    if (data.profile && !profile) profile = data.profile;
+    if (data.status === 'done')  { clearInterval(pollTimer); await loadResults(); }
+    if (data.status === 'error') { clearInterval(pollTimer); alert('Error: ' + (data.error || 'Unknown')); show('upload'); }
+  }
+
+  // ── Load all results once, then filter client-side ────────────────────────
+  async function loadResults() {
+    const res  = await fetch(`/api/results/${sessionId}`);
+    const data = await res.json();
+    allJobs = data.jobs || [];
+
+    show('results');
+    if (profile) {
+      const exp = profile.years_experience ? `${profile.years_experience} yrs exp · ` : '';
+      const adj = (profile.adjacent_titles || []).length
+        ? `  ·  Also searched: ${profile.adjacent_titles.join(', ')}`
+        : '';
+      profileText.textContent = `${profile.current_title} · ${exp}${profile.core_domain}${adj}`;
+      profileBar.classList.remove('hidden');
+    }
+
+    // Render gap analysis tile
+    const gaps = data.gap_analysis || [];
+    if (gaps.length > 0) {
+      gapList.innerHTML = gaps.map(g => `
+        <div class="gap-item">
+          <div class="gap-title">⚠ ${esc(g.gap)}</div>
+          <div class="gap-action">→ ${esc(g.action)}</div>
+        </div>`).join('');
+      gapTile.classList.remove('hidden');
+    }
+
+    visibleN = 10;
+    renderJobs();
+  }
+
+  // ── Render based on slider threshold + visibleN ───────────────────────────
+  function renderJobs() {
+    const threshold = parseInt(slider.value);
+    const filtered  = allJobs.filter(j => j.score >= threshold);
+    sliderCount.textContent = `${filtered.length} job${filtered.length !== 1 ? 's' : ''}`;
+
+    if (filtered.length === 0) {
+      resultsSummary.textContent = `No jobs match ${threshold}%+ — try lowering the slider`;
+      noResults.classList.remove('hidden');
+      jobsList.innerHTML = '';
+      loadMoreWrap.classList.add('hidden');
+      return;
+    }
+
+    noResults.classList.add('hidden');
+    resultsSummary.textContent = `${filtered.length} job${filtered.length !== 1 ? 's' : ''} match ${threshold}%+ — sorted best first`;
+
+    const showing = filtered.slice(0, visibleN);
+    jobsList.innerHTML = '';
+    showing.forEach(job => jobsList.appendChild(buildCard(job)));
+
+    if (visibleN < filtered.length) {
+      loadMoreWrap.classList.remove('hidden');
+    } else {
+      loadMoreWrap.classList.add('hidden');
+    }
+  }
+
+  loadMoreBtn.addEventListener('click', () => {
+    visibleN += 10;
+    renderJobs();
+  });
+
+  // ── Build job card ────────────────────────────────────────────────────────
+  function buildCard(job) {
+    const score = job.score;
+    const scoreClass = score >= 90 ? 'score-90' : score >= 80 ? 'score-85' : 'score-80';
+
+    const locationHtml = job.is_remote
+      ? '<i class="fa-solid fa-wifi"></i> Remote'
+      : `<i class="fa-solid fa-location-dot"></i> ${esc(job.location)}`;
+
+    const salaryHtml = job.salary
+      ? `<span class="salary-chip"><i class="fa-solid fa-sterling-sign"></i> ${esc(job.salary)}</span>`
+      : '';
+
+    const postedHtml = job.posted ? `<span class="posted-date">Posted: ${job.posted}</span>` : '';
+    const remoteBadge = job.is_remote ? '<span class="badge">Remote</span>' : '';
+
+    // ── Match breakdown ──
+    const seniorityChip = `<span class="chip ${job.seniority_match ? 'chip-match' : 'chip-miss'}">
+      ${job.seniority_match ? '✓' : '⚠'} Seniority</span>`;
+    const domainChip = `<span class="chip ${job.domain_match ? 'chip-match' : 'chip-miss'}">
+      ${job.domain_match ? '✓' : '⚠'} Domain</span>`;
+
+    const strengthChips = (job.strengths || []).map(s =>
+      `<span class="chip chip-strength">+ ${esc(s)}</span>`).join('');
+    const gapChips = (job.gaps || []).map(g =>
+      `<span class="chip chip-gap">⚠ ${esc(g)}</span>`).join('');
+
+    const breakdownHtml = `
+      <div class="breakdown">
+        <div class="breakdown-row">
+          <span class="breakdown-label">Fit</span>
+          ${seniorityChip}${domainChip}
+        </div>
+        ${strengthChips ? `<div class="breakdown-row"><span class="breakdown-label">Strong</span>${strengthChips}</div>` : ''}
+        ${gapChips     ? `<div class="breakdown-row"><span class="breakdown-label">Gaps</span>${gapChips}</div>` : ''}
+      </div>`;
+
+    const card = document.createElement('div');
+    card.className = 'job-card';
+    card.innerHTML = `
+      <div class="score-badge ${scoreClass}">
+        <span class="pct">${score}%</span>
+        <span class="pct-label">match</span>
+      </div>
+      <div class="job-body">
+        <div class="job-title">${esc(job.title)}</div>
+        <div class="job-meta">
+          <span><i class="fa-solid fa-building"></i> ${esc(job.company)}</span>
+          <span>${locationHtml}</span>
+          ${remoteBadge}
+          ${salaryHtml}
+        </div>
+        ${breakdownHtml}
+        <div class="reason">${esc(job.reason)}</div>
+        <div class="job-footer">
+          <a class="apply-btn" href="${esc(job.apply_link)}" target="_blank" rel="noopener">
+            Apply <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+          ${postedHtml}
+        </div>
+      </div>`;
+    return card;
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function show(section) {
+    uploadSection.style.display   = section === 'upload'   ? 'block' : 'none';
+    progressSection.style.display = section === 'progress' ? 'block' : 'none';
+    resultsSection.style.display  = section === 'results'  ? 'block' : 'none';
+  }
+
+  function setStep(active, status) {
+    for (let i = 1; i <= 3; i++) {
+      const el = document.getElementById(`step-${i}`);
+      el.classList.remove('active','done');
+      if (i < active || (i === active && status === 'done')) el.classList.add('done');
+      else if (i === active) el.classList.add('active');
+    }
+    for (let i = 1; i <= 2; i++)
+      document.getElementById(`step-${i}`).classList.toggle('done', i < active || status === 'done');
+  }
+
+  function restart() {
+    clearInterval(pollTimer);
+    sessionId = null; allJobs = []; visibleN = 10; profile = null;
+    fileInput.value = ''; fileInput._file = null;
+    fileNameRow.classList.add('hidden');
+    uploadBtn.disabled = true;
+    jobsList.innerHTML = '';
+    gapList.innerHTML = '';
+    profileBar.classList.add('hidden');
+    gapTile.classList.add('hidden');
+    show('upload');
+  }
+</script>
+</body>
+</html>
