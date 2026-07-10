@@ -76,6 +76,15 @@
     #drop-zone .primary { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
     #drop-zone .secondary { font-size: .85rem; color: var(--muted); }
     #file-input { display: none; }
+    .docx-hint {
+      margin-top: 12px;
+      font-size: .82rem;
+      color: var(--accent);
+      background: var(--accent-light);
+      border-radius: 8px;
+      padding: 8px 14px;
+      display: inline-block;
+    }
 
     .btn {
       display: inline-flex; align-items: center; gap: 8px;
@@ -293,6 +302,16 @@
     .gap-item:last-child { margin-bottom: 0; }
     .gap-title { font-weight: 700; font-size: .88rem; color: var(--text); margin-bottom: 2px; }
     .gap-detail { font-size: .83rem; color: var(--muted); margin-bottom: 3px; }
+    .improve-btn-wrap { margin-top: 16px; }
+    .btn-improve {
+      background: var(--accent); color: white;
+      border: none; border-radius: 8px;
+      padding: 10px 20px; font-size: .88rem; font-weight: 600;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+      transition: opacity .15s;
+    }
+    .btn-improve:hover { opacity: .85; }
+    .btn-improve:disabled { opacity: .5; cursor: not-allowed; }
     .gap-action {
       font-size: .83rem; color: #1d4ed8;
       background: #eff6ff; border-radius: 6px;
@@ -332,6 +351,11 @@
       <div class="primary">Drop your CV here</div>
       <div class="secondary">PDF, DOCX, or TXT · Max 10 MB</div>
       <input type="file" id="file-input" accept=".pdf,.docx,.txt" />
+    </div>
+
+    <div class="docx-hint">
+      <i class="fa-solid fa-wand-magic-sparkles"></i>
+      Upload as <strong>.docx</strong> to unlock <strong>AI CV Improvement</strong> — we'll rewrite your CV based on the gaps we find
     </div>
 
     <div id="file-name-row" class="hidden" style="margin-top:12px; color: var(--muted); font-size:.88rem; text-align:center;"></div>
@@ -377,6 +401,11 @@
       <h3><i class="fa-solid fa-triangle-exclamation"></i> CV Gap Analysis</h3>
       <div class="gap-sub">Based on recurring requirements across your matched London jobs</div>
       <div id="gap-list"></div>
+      <div class="improve-btn-wrap hidden" id="improve-btn-wrap">
+        <button class="btn-improve" id="improve-btn" onclick="improveCV()">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV
+        </button>
+      </div>
     </div>
 
     <div class="slider-wrap">
@@ -419,6 +448,7 @@
   let profile    = null;
   let allJobs    = [];   // all scored jobs from backend
   let visibleN   = 10;  // how many we're currently showing
+  let isDocx     = false;
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
   const dropZone        = document.getElementById('drop-zone');
@@ -455,6 +485,7 @@
 
   function setFile(f) {
     fileInput._file = f;
+    isDocx = f.name.toLowerCase().endsWith('.docx');
     fileNameRow.textContent = `📄  ${f.name}  (${(f.size / 1024).toFixed(0)} KB)`;
     fileNameRow.classList.remove('hidden');
     uploadBtn.disabled = false;
@@ -539,6 +570,10 @@
           <div class="gap-action">→ ${esc(g.action)}</div>
         </div>`).join('');
       gapTile.classList.remove('hidden');
+      // Show improve button only if a .docx was uploaded
+      if (isDocx) {
+        document.getElementById('improve-btn-wrap').classList.remove('hidden');
+      }
     }
 
     visibleN = 10;
@@ -664,9 +699,39 @@
       document.getElementById(`step-${i}`).classList.toggle('done', i < active || status === 'done');
   }
 
+  // ── Improve CV ────────────────────────────────────────────────────────────
+  async function improveCV() {
+    const btn = document.getElementById('improve-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Improving CV…';
+
+    try {
+      const res = await fetch(`/api/improve-cv/${sessionId}`, { method: 'POST' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+        alert('Error: ' + (err.detail || 'Something went wrong'));
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV';
+        return;
+      }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'improved_cv.docx';
+      a.click();
+      URL.revokeObjectURL(url);
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Downloaded!';
+    } catch(e) {
+      alert('Could not improve CV: ' + e.message);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV';
+    }
+  }
+
   function restart() {
     clearInterval(pollTimer);
-    sessionId = null; allJobs = []; visibleN = 10; profile = null;
+    sessionId = null; allJobs = []; visibleN = 10; profile = null; isDocx = false;
     fileInput.value = ''; fileInput._file = null;
     fileNameRow.classList.add('hidden');
     uploadBtn.disabled = true;
@@ -674,6 +739,10 @@
     gapList.innerHTML = '';
     profileBar.classList.add('hidden');
     gapTile.classList.add('hidden');
+    document.getElementById('improve-btn-wrap').classList.add('hidden');
+    const btn = document.getElementById('improve-btn');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV';
     show('upload');
   }
 </script>

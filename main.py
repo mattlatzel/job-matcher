@@ -16,7 +16,7 @@ import anthropic
 import httpx
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 
 # ── App setup ────────────────────────────────────────────────────────────────
 
@@ -572,9 +572,10 @@ async def analyze(background_tasks: BackgroundTasks, file: UploadFile = File(...
         "gap_analysis": [],
         "total_jobs":   0,
         "error":        None,
+        "docx_bytes":   content if name.endswith(".docx") else None,
     }
     background_tasks.add_task(process_cv, session_id, cv_text)
-    return {"session_id": session_id}
+    return {"session_id": session_id, "is_docx": name.endswith(".docx")}
 
 
 @app.get("/api/status/{session_id}")
@@ -599,6 +600,123 @@ async def get_results(session_id: str):
         "jobs":         s.get("results", []),
         "gap_analysis": s.get("gap_analysis", []),
     }
+
+
+# ── Claude: Improve CV based on gap analysis ─────────────────────────────────
+
+async def improve_cv_content(
+    client: anthropic.AsyncAnthropic,
+    docx_bytes: bytes,
+    gap_analysis: list[dict],
+    profile: dict,
+) -> bytes:
+    import docx as docx_lib
+
+    doc = docx_lib.Document(io.BytesIO(docx_bytes))
+
+    # Extract non-empty paragraphs with their index
+    para_lines = []
+    for i, para in enumerate(doc.paragraphs):
+        text = para.text.strip()
+        if text:
+            para_lines.append(f"{i}: {text}")
+
+    paragraphs_block = "\n".join(para_lines)
+
+    gaps_block = "\n".join(
+        f"- Gap: {g.get('gap')} | Action: {g.get('action')}" for g in gap_analysis
+    )
+
+    resp = await client.messages.create(
+        model=SONNET,
+        max_tokens=4096,
+        messages=[{
+            "role": "user",
+            "content": f"""You are a professional CV editor. Your task is to improve specific lines in this CV to address identified skill gaps.
+
+CANDIDATE PROFILE:
+Title: {profile.get('current_title')}
+Domain: {profile.get('core_domain')}
+Skills: {', '.join(profile.get('core_skills', []))}
+
+GAPS TO ADDRESS:
+{gaps_block}
+
+CV PARAGRAPHS (format: index: text):
+{paragraphs_block}
+
+Instructions:
+- Identify which paragraphs should be rewritten to address the gaps above.
+- Only change paragraphs where an improvement is genuinely needed — do NOT change headings, contact info, dates, or sections unrelated to the gaps.
+- Rewrite the selected paragraphs to naturally incorporate the missing skills or experience framing.
+- Keep the same general length and tone. Do not invent experience that isn't there — reframe and strengthen what exists.
+- Return ONLY the paragraphs you changed.
+
+Return JSON array only:
+[
+  {{"index": <paragraph_index>, "new_text": "improved paragraph text"}},
+  ...
+]"""
+        }]
+    )
+
+    text = next(b.text for b in resp.content if hasattr(b, "text")).strip()
+    try:
+        match = re.search(r"\[.*\]", text, re.DOTALL)
+        changes: list[dict] = json.loads(match.group() if match else text)
+    except Exception as e:
+        print(f"  CV improve parse error: {e}")
+        changes = []
+
+    print(f"  Applying {len(changes)} paragraph changes to CV")
+
+    for change in changes:
+        idx = change.get("index")
+        new_text = change.get("new_text", "").strip()
+        if idx is None or not new_text:
+            continue
+        if idx >= len(doc.paragraphs):
+            continue
+        para = doc.paragraphs[idx]
+        if not para.runs:
+            # No runs — just set text directly (rare)
+            para.clear()
+            para.add_run(new_text)
+        else:
+            # Preserve first run's character formatting, wipe the rest
+            para.runs[0].text = new_text
+            for run in para.runs[1:]:
+                run.text = ""
+
+    out = io.BytesIO()
+    doc.save(out)
+    out.seek(0)
+    return out.read()
+
+
+@app.post("/api/improve-cv/{session_id}")
+async def improve_cv(session_id: str):
+    if session_id not in sessions:
+        raise HTTPException(404, "Session not found")
+    s = sessions[session_id]
+    if s.get("status") != "done":
+        raise HTTPException(400, "Analysis not complete yet")
+    if not s.get("docx_bytes"):
+        raise HTTPException(400, "No Word document in this session")
+
+    client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
+    improved_bytes = await improve_cv_content(
+        client,
+        s["docx_bytes"],
+        s.get("gap_analysis", []),
+        s.get("profile", {}),
+    )
+
+    return StreamingResponse(
+        io.BytesIO(improved_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": "attachment; filename=improved_cv.docx"},
+    )
 
 
 @app.get("/")
