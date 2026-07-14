@@ -227,15 +227,28 @@ async def fetch_jobs(profile: dict) -> list[dict]:
         _fetch_adzuna(kw) for kw in adzuna_keywords
     ])
 
-    # Merge and deduplicate by job_id
-    seen: set = set()
+    # Merge and deduplicate by job_id AND by (normalised title + company)
+    def _norm(s: str) -> str:
+        s = (s or "").lower()
+        s = re.sub(r'\b(senior|junior|lead|principal|staff|head of|director of|vp|associate)\b', '', s)
+        return re.sub(r'[^a-z0-9]', '', s).strip()
+
+    seen_ids: set    = set()
+    seen_content: set = set()
     all_jobs: list[dict] = []
     for batch in list(jsearch_results) + list(adzuna_results):
         for job in batch:
-            jid = job.get("job_id")
-            if jid and jid not in seen:
-                seen.add(jid)
-                all_jobs.append(job)
+            jid          = job.get("job_id")
+            content_key  = (_norm(job.get("job_title", "")), _norm(job.get("employer_name", "")))
+            if jid in seen_ids:
+                continue
+            if content_key[0] and content_key in seen_content:
+                continue
+            if jid:
+                seen_ids.add(jid)
+            if content_key[0]:
+                seen_content.add(content_key)
+            all_jobs.append(job)
 
     print(f"  Total unique jobs fetched: {len(all_jobs)}")
     return all_jobs
@@ -702,6 +715,34 @@ JSON only. No prose."""
     return json.loads(match.group() if match else text)
 
 
+# ── Claude: Salary benchmarking ──────────────────────────────────────────────
+
+async def analyze_salary(
+    client: anthropic.AsyncAnthropic,
+    profile: dict,
+    scored_jobs: list[dict],
+) -> str | None:
+    jobs_with_salary = [j for j in scored_jobs if j.get("salary") and j.get("score", 0) >= 60][:20]
+    if len(jobs_with_salary) < 3:
+        return None
+
+    salary_lines = "\n".join(
+        f"- {j['title']} at {j['company']}: {j['salary']}"
+        for j in jobs_with_salary
+    )
+
+    resp = await client.messages.create(
+        model=HAIKU,
+        max_tokens=80,
+        messages=[{"role": "user", "content": f"""You are Chelsea, a career advisor. Based on these live London job listings for a {profile.get('current_title')} with {profile.get('years_experience')} years experience:
+
+{salary_lines}
+
+Write ONE warm, concise sentence (max 25 words) giving the salary range you are seeing. Start with "Based on what I'm seeing..." and do not use dashes."""}]
+    )
+    return next(b.text for b in resp.content if hasattr(b, "text")).strip()
+
+
 # ── Background worker ─────────────────────────────────────────────────────────
 
 async def process_cv(session_id: str, cv_text: str, conversation_messages: list = None) -> None:
@@ -747,10 +788,12 @@ async def process_cv(session_id: str, cv_text: str, conversation_messages: list 
         session["results"] = all_results
         print(f"✓ Scored {len(all_results)} jobs")
 
-        # 5. Gap analysis
-        print("▶ Step 5: CV gap analysis…")
-        session["gap_analysis"] = await analyze_cv_gaps(ai_client, profile, all_results)
-        print(f"✓ Found {len(session['gap_analysis'])} gaps")
+        # 5. Gap analysis + salary insight (parallel)
+        print("▶ Step 5: Gap analysis + salary benchmarking…")
+        gap_task    = analyze_cv_gaps(ai_client, profile, all_results)
+        salary_task = analyze_salary(ai_client, profile, all_results)
+        session["gap_analysis"], session["salary_insight"] = await asyncio.gather(gap_task, salary_task)
+        print(f"✓ Found {len(session['gap_analysis'])} gaps | salary insight: {bool(session['salary_insight'])}")
 
         session["status"] = "done"
         session["chat_status"] = "done"
@@ -804,9 +847,10 @@ async def chat_start(file: UploadFile = File(...)):
         "status":      "starting",
         "profile":     None,
         "results":     [],
-        "gap_analysis": [],
-        "total_jobs":  0,
-        "error":       None,
+        "gap_analysis":   [],
+        "salary_insight": None,
+        "total_jobs":     0,
+        "error":          None,
     }
 
     return {
@@ -902,8 +946,9 @@ async def get_results(session_id: str):
         raise HTTPException(404, "Session not found")
     s = sessions[session_id]
     return {
-        "jobs":         s.get("results", []),
-        "gap_analysis": s.get("gap_analysis", []),
+        "jobs":           s.get("results", []),
+        "gap_analysis":   s.get("gap_analysis", []),
+        "salary_insight": s.get("salary_insight"),
     }
 
 
