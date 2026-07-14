@@ -805,7 +805,7 @@
   })();
 
   // ── Initial greeting ──────────────────────────────────────────────────────
-  addMsg('assistant', "Hi, I'm Chelsea! I'm going to help you find the job you actually deserve — not just any job. Upload your CV using the 📎 button and I'll take it from there. PDF, Word, or text file all work.");
+  addMsg('assistant', "Hi, I'm Chelsea! Think of me as your secret weapon in the job market. I'll read your CV, ask you a few smart questions, and then go hunt down the roles in London that are actually worth your time. No fluff, no generic listings. Just real matches. Drop your CV below using the 📎 button and let's get started. PDF, Word, or text file all work.");
   show('initial');
 
   // ── File upload ───────────────────────────────────────────────────────────
@@ -1001,7 +1001,7 @@
     // Re-open chat for refinement
     setTimeout(() => {
       const n = allJobs.filter(j => j.score >= parseInt(slider.value)).length;
-      addMsg('assistant', `Right, I found ${n} match${n !== 1 ? 'es' : ''} for you. Have a look — and if anything feels off or you want me to cast the net differently, just tell me. I'm not done until you're happy with what you're seeing.`);
+      addMsg('assistant', `Right, I found ${n} match${n !== 1 ? 'es' : ''} for you. Have a look, and if anything feels off or you want me to cast the net differently, just tell me. I'm not done until you're happy with what you're seeing.`);
       enableInput();
       chatTextInput.placeholder = 'Refine search or ask about your matches…';
     }, 600);
@@ -1162,7 +1162,7 @@
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV';
     show('initial');
-    addMsg('assistant', "Hi, I'm Chelsea! I'm going to help you find the job you actually deserve — not just any job. Upload your CV using the 📎 button and I'll take it from there. PDF, Word, or text file all work.");
+    addMsg('assistant', "Hi, I'm Chelsea! Think of me as your secret weapon in the job market. I'll read your CV, ask you a few smart questions, and then go hunt down the roles in London that are actually worth your time. No fluff, no generic listings. Just real matches. Drop your CV below using the 📎 button and let's get started. PDF, Word, or text file all work.");
   }
 </script>
 </body>
