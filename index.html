@@ -163,56 +163,74 @@
       30% { transform: translateY(-6px); opacity: 1; }
     }
 
-    /* Input row */
+    /* Input box — Claude-style */
     .chat-input-row {
-      display: flex;
-      align-items: flex-end;
-      gap: 12px;
-      padding: 14px 24px;
+      padding: 12px 16px 14px;
       border-top: 1px solid var(--border);
       background: #ffffff;
       flex-shrink: 0;
     }
+    .chat-input-box {
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      background: #fff;
+      transition: border-color .15s, box-shadow .15s;
+      display: flex;
+      flex-direction: column;
+      padding: 12px 14px 10px;
+    }
+    .chat-input-box:focus-within {
+      border-color: var(--accent-cobalt);
+      box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.1);
+    }
+    #chat-file-input { display: none; }
+    .chat-text-input {
+      border: none;
+      outline: none;
+      resize: none;
+      font-size: .95rem;
+      font-family: inherit;
+      line-height: 1.5;
+      min-height: 24px;
+      max-height: 140px;
+      overflow-y: auto;
+      background: transparent;
+      color: var(--text);
+      width: 100%;
+      padding: 0;
+    }
+    .chat-text-input::placeholder { color: var(--muted); }
+    .chat-text-input:disabled { color: var(--muted); cursor: not-allowed; }
+    .chat-input-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
     .chat-attach-label {
       color: var(--muted);
       cursor: pointer;
-      font-size: 1.15rem;
-      padding: 8px 12px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      transition: color .15s, background .15s, border-color .15s;
+      font-size: 1.25rem;
+      width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      transition: color .15s, background .15s;
       flex-shrink: 0;
+      line-height: 1;
+      font-weight: 300;
     }
-    .chat-attach-label:hover { color: var(--accent-cobalt); background: var(--accent-light); border-color: var(--accent-cobalt); }
-    #chat-file-input { display: none; }
-    .chat-text-input {
-      flex: 1;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 10px 16px;
-      font-size: .95rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color .15s, box-shadow .15s;
-      resize: none;
-      line-height: 1.5;
-      min-height: 42px;
-      max-height: 140px;
-      overflow-y: auto;
-    }
-    .chat-text-input:focus { border-color: var(--accent-cobalt); box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.1); }
-    .chat-text-input:disabled { background: #f8fafc; color: var(--muted); }
+    .chat-attach-label:hover { color: var(--text); background: var(--accent-light); }
     .chat-send-btn {
       background: var(--accent-cobalt);
       color: white;
       border: none;
-      border-radius: var(--radius);
-      width: 42px; height: 42px;
+      border-radius: 50%;
+      width: 34px; height: 34px;
       flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
       transition: background .15s;
-      font-size: .95rem;
+      font-size: 1rem;
     }
     .chat-send-btn:hover { background: #004494; }
     .chat-send-btn:disabled { background: #e2e8f0; color: var(--muted); cursor: not-allowed; }
@@ -652,20 +670,24 @@
         <div class="chat-window">
           <div class="chat-messages" id="chat-messages"></div>
           <div class="chat-input-row">
-            <label class="chat-attach-label" title="Upload CV">
-              <i class="fa-solid fa-paperclip"></i>
-              <input type="file" id="chat-file-input" accept=".pdf,.docx,.txt" />
-            </label>
-            <textarea
-              class="chat-text-input"
-              id="chat-text"
-              placeholder="Upload your CV to get started…"
-              rows="1"
-              disabled
-            ></textarea>
-            <button class="chat-send-btn" id="chat-send-btn" disabled>
-              <i class="fa-solid fa-paper-plane"></i>
-            </button>
+            <div class="chat-input-box">
+              <textarea
+                class="chat-text-input"
+                id="chat-text"
+                placeholder="Upload your CV to get started…"
+                rows="1"
+                disabled
+              ></textarea>
+              <div class="chat-input-footer">
+                <label class="chat-attach-label" title="Upload CV">
+                  <span style="font-size:1.4rem; font-weight:300; line-height:1">+</span>
+                  <input type="file" id="chat-file-input" accept=".pdf,.docx,.txt" />
+                </label>
+                <button class="chat-send-btn" id="chat-send-btn" disabled>
+                  <i class="fa-solid fa-arrow-up"></i>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         <p class="chat-hint">Upload as <strong>.docx</strong> to unlock AI CV improvement after matching</p>
