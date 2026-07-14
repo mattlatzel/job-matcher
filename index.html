@@ -508,6 +508,80 @@
     }
     #restart-link:hover { color: var(--accent-cobalt); }
 
+    /* ── Layout Overhaul ── */
+    .app-container {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    .left-panel {
+      position: sticky;
+      top: 24px;
+    }
+    .right-panel {
+      min-width: 0;
+    }
+    .chat-header-alt {
+      margin-bottom: 20px;
+    }
+    .chat-header-alt h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #0b1b2b;
+      margin-bottom: 4px;
+    }
+    .chat-header-alt p {
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 900px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+      .left-panel {
+        position: static;
+      }
+    }
+
+    .placeholder-card {
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 64px 32px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .placeholder-icon-wrap {
+      width: 60px; height: 60px;
+      background: #f1f5f9;
+      color: var(--accent-cobalt);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+    }
+    .placeholder-card h3 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.25rem;
+      color: #0b1b2b;
+      font-weight: 700;
+    }
+    .placeholder-card p {
+      color: var(--muted);
+      font-size: .92rem;
+      max-width: 320px;
+      line-height: 1.5;
+    }
+
     .hidden { display: none !important; }
   </style>
 </head>
@@ -517,115 +591,133 @@
   <div class="logo"><i class="fa-solid fa-briefcase"></i></div>
   <div>
     <h1>CV Job Matcher</h1>
-    <p>AI-powered job matching — finds roles that fit your actual experience</p>
   </div>
 </header>
 
 <main>
-
-  <!-- ── Chat ── -->
-  <section id="chat-section">
-    <div class="chat-header">
-      <h2>Find your perfect job match</h2>
-      <p>Chat with our AI advisor — upload your CV and answer a few quick questions</p>
-    </div>
-
-    <div class="chat-window">
-      <div class="chat-messages" id="chat-messages"></div>
-      <div class="chat-input-row">
-        <label class="chat-attach-label" title="Upload CV">
-          <i class="fa-solid fa-paperclip"></i>
-          <input type="file" id="chat-file-input" accept=".pdf,.docx,.txt" />
-        </label>
-        <input
-          type="text"
-          class="chat-text-input"
-          id="chat-text"
-          placeholder="Upload your CV to get started…"
-          disabled
-        />
-        <button class="chat-send-btn" id="chat-send-btn" disabled>
-          <i class="fa-solid fa-paper-plane"></i>
-        </button>
-      </div>
-    </div>
-    <p class="chat-hint">Upload as <strong>.docx</strong> to unlock AI CV improvement after matching</p>
-  </section>
-
-  <!-- ── Progress ── -->
-  <section id="progress-section">
-    <div class="progress-card">
-      <div class="spinner"></div>
-      <div class="progress-title" id="progress-title">Starting…</div>
-      <div class="progress-sub" id="progress-sub">This takes about 30–60 seconds</div>
-
-      <div class="steps" style="margin-top: 32px;">
-        <div class="step" id="step-1">
-          <div class="step-dot">1</div>
-          <div class="step-label">Reading CV</div>
+  <div class="app-container">
+    <!-- Left Panel: Chat -->
+    <div class="left-panel">
+      <!-- ── Chat ── -->
+      <section id="chat-section">
+        <div class="chat-header-alt">
+          <h2>Advisory Portal</h2>
+          <p>Provide your details to initiate matching</p>
         </div>
-        <div class="step" id="step-2">
-          <div class="step-dot">2</div>
-          <div class="step-label">Finding Jobs</div>
+
+        <div class="chat-window">
+          <div class="chat-messages" id="chat-messages"></div>
+          <div class="chat-input-row">
+            <label class="chat-attach-label" title="Upload CV">
+              <i class="fa-solid fa-paperclip"></i>
+              <input type="file" id="chat-file-input" accept=".pdf,.docx,.txt" />
+            </label>
+            <input
+              type="text"
+              class="chat-text-input"
+              id="chat-text"
+              placeholder="Upload your CV to get started…"
+              disabled
+            />
+            <button class="chat-send-btn" id="chat-send-btn" disabled>
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
         </div>
-        <div class="step" id="step-3">
-          <div class="step-dot">3</div>
-          <div class="step-label">AI Scoring</div>
+        <p class="chat-hint">Upload as <strong>.docx</strong> to unlock AI CV improvement after matching</p>
+      </section>
+    </div>
+
+    <!-- Right Panel: Dashboard -->
+    <div class="right-panel">
+      <!-- Initial Placeholder State -->
+      <div id="initial-state-card" class="placeholder-card">
+        <div class="placeholder-icon-wrap">
+          <i class="fa-solid fa-file-invoice"></i>
         </div>
+        <h3>Strategic Profile Awaiting Activation</h3>
+        <p>Please upload your CV in the Advisory Portal on the left to begin the matching and analysis sequence.</p>
       </div>
+
+      <!-- ── Progress ── -->
+      <section id="progress-section" class="hidden">
+        <div class="progress-card">
+          <div class="spinner"></div>
+          <div class="progress-title" id="progress-title">Starting…</div>
+          <div class="progress-sub" id="progress-sub">This takes about 30–60 seconds</div>
+
+          <div class="steps" style="margin-top: 32px;">
+            <div class="step" id="step-1">
+              <div class="step-dot">1</div>
+              <div class="step-label">Reading CV</div>
+            </div>
+            <div class="step" id="step-2">
+              <div class="step-dot">2</div>
+              <div class="step-label">Finding Jobs</div>
+            </div>
+            <div class="step" id="step-3">
+              <div class="step-dot">3</div>
+              <div class="step-label">AI Scoring</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Results ── -->
+      <section id="results-section" class="hidden">
+        <div class="results-header">
+          <h2>Your best matches</h2>
+          <p id="results-summary"></p>
+        </div>
+
+        <div id="gap-tile" class="hidden">
+          <h3 onclick="toggleGapTile()" style="cursor:pointer; user-select:none; justify-content:space-between;">
+            <span><i class="fa-solid fa-triangle-exclamation"></i> CV Gap Analysis</span>
+            <i class="fa-solid fa-chevron-down" id="gap-chevron" style="font-size:.9rem; color:var(--red); transition:transform .2s;"></i>
+          </h3>
+          <div id="gap-body" class="hidden">
+            <div class="gap-sub">Based on recurring requirements across your matched London jobs</div>
+            <div id="gap-list"></div>
+            <div class="improve-btn-wrap hidden" id="improve-btn-wrap">
+              <button class="btn-improve" id="improve-btn" onclick="improveCV()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="slider-wrap">
+          <span class="slider-label">Min match</span>
+          <input type="range" id="threshold-slider" min="50" max="95" value="70" step="5" />
+          <span class="slider-value" id="threshold-value">70%</span>
+          <span class="slider-count" id="threshold-count"></span>
+        </div>
+
+        <div id="profile-bar" class="hidden">
+          <i class="fa-solid fa-user-tie"></i>
+          <span class="profile-text" id="profile-text"></span>
+        </div>
+
+        <div id="jobs-list"></div>
+
+        <div id="no-results" class="hidden">
+          <div class="icon">😕</div>
+          <h3>No strong matches found right now</h3>
+          <p>We couldn't find jobs matching your threshold. Try lowering the slider or check back in a few days.</p>
+        </div>
+
+        <div id="load-more-wrap" class="hidden">
+          <button class="btn btn-outline" id="load-more-btn">
+            <i class="fa-solid fa-chevron-down"></i> Load 10 more
+          </button>
+        </div>
+
+        <div id="restart-link" onclick="restart()">
+          <i class="fa-solid fa-rotate-left"></i> Start over with a different CV
+        </div>
+      </section>
     </div>
-  </section>
-
-  <!-- ── Results ── -->
-  <section id="results-section">
-
-    <div class="results-header">
-      <h2>Your best matches</h2>
-      <p id="results-summary"></p>
-    </div>
-
-    <div id="gap-tile" class="hidden">
-      <h3><i class="fa-solid fa-triangle-exclamation"></i> CV Gap Analysis</h3>
-      <div class="gap-sub">Based on recurring requirements across your matched London jobs</div>
-      <div id="gap-list"></div>
-      <div class="improve-btn-wrap hidden" id="improve-btn-wrap">
-        <button class="btn-improve" id="improve-btn" onclick="improveCV()">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV
-        </button>
-      </div>
-    </div>
-
-    <div class="slider-wrap">
-      <span class="slider-label">Min match</span>
-      <input type="range" id="threshold-slider" min="50" max="95" value="70" step="5" />
-      <span class="slider-value" id="threshold-value">70%</span>
-      <span class="slider-count" id="threshold-count"></span>
-    </div>
-
-    <div id="profile-bar" class="hidden">
-      <i class="fa-solid fa-user-tie"></i>
-      <span class="profile-text" id="profile-text"></span>
-    </div>
-
-    <div id="jobs-list"></div>
-
-    <div id="no-results" class="hidden">
-      <div class="icon">😕</div>
-      <h3>No strong matches found right now</h3>
-      <p>We couldn't find jobs matching your threshold. Try lowering the slider or check back in a few days.</p>
-    </div>
-
-    <div id="load-more-wrap" class="hidden">
-      <button class="btn btn-outline" id="load-more-btn">
-        <i class="fa-solid fa-chevron-down"></i> Load 10 more
-      </button>
-    </div>
-
-    <div id="restart-link" onclick="restart()">
-      <i class="fa-solid fa-rotate-left"></i> Start over with a different CV
-    </div>
-  </section>
-
+  </div>
 </main>
 
 <script>
@@ -639,9 +731,10 @@
   let chatWaiting = false;
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
-  const chatSection     = document.getElementById('chat-section');
-  const progressSection = document.getElementById('progress-section');
-  const resultsSection  = document.getElementById('results-section');
+  const chatSection       = document.getElementById('chat-section');
+  const progressSection   = document.getElementById('progress-section');
+  const resultsSection    = document.getElementById('results-section');
+  const initialStateCard  = document.getElementById('initial-state-card');
   const chatMessages    = document.getElementById('chat-messages');
   const chatFileInput   = document.getElementById('chat-file-input');
   const chatTextInput   = document.getElementById('chat-text');
@@ -663,6 +756,7 @@
 
   // ── Initial greeting ──────────────────────────────────────────────────────
   addMsg('assistant', "Hi! I'm here to help you find jobs that genuinely match your background. Start by uploading your CV — use the 📎 button. PDF, Word, or text file all work.");
+  show('initial');
 
   // ── File upload ───────────────────────────────────────────────────────────
   chatFileInput.addEventListener('change', () => {
@@ -840,6 +934,7 @@
           <div class="gap-action">→ ${esc(g.action)}</div>
         </div>`).join('');
       gapTile.classList.remove('hidden');
+      // gap body stays collapsed by default — user clicks to expand
       if (isDocx) {
         document.getElementById('improve-btn-wrap').classList.remove('hidden');
       }
@@ -931,6 +1026,15 @@
     return card;
   }
 
+  // ── Gap tile toggle ───────────────────────────────────────────────────────
+  function toggleGapTile() {
+    const body    = document.getElementById('gap-body');
+    const chevron = document.getElementById('gap-chevron');
+    const open    = !body.classList.contains('hidden');
+    body.classList.toggle('hidden', open);
+    chevron.style.transform = open ? '' : 'rotate(180deg)';
+  }
+
   // ── Improve CV ────────────────────────────────────────────────────────────
   async function improveCV() {
     const btn = document.getElementById('improve-btn');
@@ -964,9 +1068,10 @@
   }
 
   function show(section) {
-    chatSection.style.display     = section === 'chat'     ? 'block' : 'none';
-    progressSection.style.display = section === 'progress' ? 'block' : 'none';
-    resultsSection.style.display  = section === 'results'  ? 'block' : 'none';
+    // Chat always stays visible in the left panel — never touched here
+    initialStateCard.classList.toggle('hidden', section !== 'initial');
+    progressSection.classList.toggle('hidden',  section !== 'progress');
+    resultsSection.classList.toggle('hidden',   section !== 'results');
   }
 
   function setStep(active, status) {
@@ -992,11 +1097,13 @@
     gapList.innerHTML = '';
     profileBar.classList.add('hidden');
     gapTile.classList.add('hidden');
+    document.getElementById('gap-body').classList.add('hidden');
+    document.getElementById('gap-chevron').style.transform = '';
     document.getElementById('improve-btn-wrap').classList.add('hidden');
     const btn = document.getElementById('improve-btn');
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV';
-    show('chat');
+    show('initial');
     addMsg('assistant', "Hi! I'm here to help you find jobs that genuinely match your background. Start by uploading your CV — use the 📎 button. PDF, Word, or text file all work.");
   }
 </script>
