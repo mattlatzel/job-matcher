@@ -36,9 +36,10 @@ app.add_middleware(
 # In-memory session store  { session_id: { status, profile, results, total_jobs, error } }
 sessions: dict = {}
 
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-JSEARCH_API_KEY   = os.getenv("JSEARCH_API_KEY")
-REED_API_KEY      = os.getenv("REED_API_KEY")  # optional — activates when set
+ANTHROPIC_API_KEY  = os.getenv("ANTHROPIC_API_KEY")
+JSEARCH_API_KEY    = os.getenv("JSEARCH_API_KEY")
+ADZUNA_APP_ID      = os.getenv("ADZUNA_APP_ID")
+ADZUNA_APP_KEY     = os.getenv("ADZUNA_APP_KEY")
 
 SONNET = "claude-sonnet-5"   # profile extraction — needs quality reasoning
 HAIKU  = "claude-haiku-4-5-20251001"   # job scoring — runs ~20+ times, needs speed
@@ -144,56 +145,55 @@ async def _fetch_query_standalone(query: str, pages: int = 2) -> list[dict]:
         return await _fetch_query(client, query, pages)
 
 
-async def _fetch_reed(keywords: str, location: str = "London", results_to_take: int = 100) -> list[dict]:
-    """Fetch jobs from Reed API and normalise to our internal format."""
-    if not REED_API_KEY:
+async def _fetch_adzuna(keywords: str, location: str = "London", results_per_page: int = 50) -> list[dict]:
+    """Fetch jobs from Adzuna API and normalise to our internal format."""
+    if not ADZUNA_APP_ID or not ADZUNA_APP_KEY:
         return []
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.get(
-                "https://www.reed.co.uk/api/1.0/search",
+                "https://api.adzuna.com/v1/api/jobs/gb/search/1",
                 params={
-                    "keywords":       keywords,
-                    "locationName":   location,
-                    "distancefromLocation": 15,
-                    "resultsToTake":  results_to_take,
-                    "permanent":      True,
+                    "app_id":           ADZUNA_APP_ID,
+                    "app_key":          ADZUNA_APP_KEY,
+                    "what":             keywords,
+                    "where":            location,
+                    "distance":         15,
+                    "results_per_page": results_per_page,
+                    "content-type":     "application/json",
                 },
-                auth=(REED_API_KEY, ""),
             )
         data = resp.json()
         jobs = data.get("results", [])
         normalised = []
         for j in jobs:
-            # Map Reed fields → our internal schema (same as JSearch output)
-            min_s = j.get("minimumSalary")
-            max_s = j.get("maximumSalary")
+            min_s = j.get("salary_min")
+            max_s = j.get("salary_max")
             salary_str = None
-            if min_s and max_s:
+            if min_s and max_s and min_s != max_s:
                 salary_str = f"£{int(min_s):,} – £{int(max_s):,} / yr"
-            elif min_s:
-                salary_str = f"From £{int(min_s):,}"
             elif max_s:
                 salary_str = f"Up to £{int(max_s):,}"
+            elif min_s:
+                salary_str = f"From £{int(min_s):,}"
 
             normalised.append({
-                "job_id":          f"reed_{j.get('jobId')}",
-                "job_title":       j.get("jobTitle", ""),
-                "employer_name":   j.get("employerName", ""),
-                "job_city":        j.get("locationName", "London"),
+                "job_id":          f"adzuna_{j.get('id')}",
+                "job_title":       j.get("title", ""),
+                "employer_name":   j.get("company", {}).get("display_name", ""),
+                "job_city":        j.get("location", {}).get("display_name", "London"),
                 "job_country":     "United Kingdom",
                 "job_is_remote":   False,
-                "job_description": j.get("jobDescription", ""),
-                "job_apply_link":  j.get("jobUrl", ""),
-                "job_google_link": j.get("jobUrl", ""),
-                "job_posted_at_datetime_utc": j.get("date", ""),
-                # Pre-normalised salary so score_batch can skip its own parsing
+                "job_description": j.get("description", ""),
+                "job_apply_link":  j.get("redirect_url", ""),
+                "job_google_link": j.get("redirect_url", ""),
+                "job_posted_at_datetime_utc": j.get("created", ""),
                 "_salary_display": salary_str,
             })
-        print(f"  Reed fetched {len(normalised)} jobs for '{keywords}'")
+        print(f"  Adzuna fetched {len(normalised)} jobs for '{keywords}'")
         return normalised
     except Exception as e:
-        print(f"  Reed error ({keywords}): {e}")
+        print(f"  Adzuna error ({keywords}): {e}")
         return []
 
 
@@ -215,22 +215,22 @@ async def fetch_jobs(profile: dict) -> list[dict]:
 
     print(f"  JSearch queries: {[q for q, _ in jsearch_queries]}")
 
-    # Reed keywords — main + adjacent titles + sectors
-    reed_keywords = [domain, title] + adjacent_titles[:4] + [f"{title} {s}" for s in target_sectors[:2]]
+    # Adzuna keywords — main + adjacent titles + sectors
+    adzuna_keywords = [domain, title] + adjacent_titles[:4] + [f"{title} {s}" for s in target_sectors[:2]]
 
     async with httpx.AsyncClient(timeout=45) as client:
         jsearch_results = await asyncio.gather(*[
             _fetch_query(client, q, pages=p) for q, p in jsearch_queries
         ])
 
-    reed_results = await asyncio.gather(*[
-        _fetch_reed(kw) for kw in reed_keywords
+    adzuna_results = await asyncio.gather(*[
+        _fetch_adzuna(kw) for kw in adzuna_keywords
     ])
 
     # Merge and deduplicate by job_id
     seen: set = set()
     all_jobs: list[dict] = []
-    for batch in list(jsearch_results) + list(reed_results):
+    for batch in list(jsearch_results) + list(adzuna_results):
         for job in batch:
             jid = job.get("job_id")
             if jid and jid not in seen:
