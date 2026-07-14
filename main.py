@@ -89,7 +89,9 @@ Return exactly this JSON structure:
   "core_domain": "1-sentence description of their main professional domain",
   "core_skills": ["top 6 most important skills"],
   "job_search_query": "best search query to find matching jobs (role + domain, e.g. 'Senior Product Manager SaaS')",
-  "adjacent_titles": ["2-3 alternative job titles this person could also qualify for, e.g. Head of Product, Director of Product"],
+  "adjacent_titles": ["5-6 related job titles spanning BOTH lateral moves AND adjacent/broader roles. Cast wide — include different role types (e.g. BA, Solutions Consultant, PM) and related sectors. Better to include more than too few."],
+  "target_sectors": ["4-5 sectors/industries where this person's skills are genuinely applicable, e.g. 'fintech', 'investment banking', 'capital markets', 'payments', 'insurtech'"],
+  "adjacent_seniority": ["the 1-2 seniority levels directly above and below their current level, e.g. ['lead', 'principal'] for a senior person"],
   "location": "city/country or Remote",
   "summary": "2-sentence professional summary"
 }}"""
@@ -195,20 +197,23 @@ async def _fetch_reed(keywords: str, location: str = "London", results_to_take: 
 async def fetch_jobs(profile: dict) -> list[dict]:
     title           = profile.get("current_title", "professional")
     domain          = profile.get("job_search_query") or title
-    adjacent_titles = profile.get("adjacent_titles", [])[:4]
+    adjacent_titles   = profile.get("adjacent_titles", [])[:6]
+    target_sectors    = profile.get("target_sectors", [])[:4]
 
-    # JSearch queries
+    # JSearch queries — main + adjacent titles + sector-broadening
     jsearch_queries = [
         (f"{domain} in London",  6),
         (f"{title} in London",   4),
     ]
     for adj in adjacent_titles:
         jsearch_queries.append((f"{adj} in London", 3))
+    for sector in target_sectors:
+        jsearch_queries.append((f"{title} {sector} London", 2))
 
     print(f"  JSearch queries: {[q for q, _ in jsearch_queries]}")
 
-    # Reed keywords (no location suffix needed — passed as param)
-    reed_keywords = [domain, title] + adjacent_titles[:2]
+    # Reed keywords — main + adjacent titles + sectors
+    reed_keywords = [domain, title] + adjacent_titles[:4] + [f"{title} {s}" for s in target_sectors[:2]]
 
     async with httpx.AsyncClient(timeout=45) as client:
         jsearch_results = await asyncio.gather(*[
@@ -247,8 +252,11 @@ async def prefilter_jobs(
     batch_size = 20
     passed: list[dict] = []
 
-    profile_line = (
-        f"{profile.get('seniority', '').capitalize()} {profile.get('current_title')} "
+    seniority     = profile.get("seniority", "")
+    adj_seniority = profile.get("adjacent_seniority", [])
+    all_levels    = ", ".join(filter(None, [seniority] + adj_seniority)) or "mid"
+    profile_line  = (
+        f"{profile.get('current_title')} ({all_levels} level) "
         f"with {profile.get('years_experience')} years in {profile.get('core_domain')}"
     )
 
@@ -665,7 +673,9 @@ Return exactly this JSON structure:
   "core_domain": "1-sentence description of their main professional domain",
   "core_skills": ["top 6 skills, informed by the conversation"],
   "job_search_query": "best search query to find matching jobs",
-  "adjacent_titles": ["2-3 alternative job titles they could qualify for"],
+  "adjacent_titles": ["5-6 related job titles spanning BOTH lateral moves AND adjacent/broader roles. Cast wide — include different role types and related sectors. Prioritise titles the candidate expressed interest in during the conversation."],
+  "target_sectors": ["4-5 sectors/industries where this person's skills are genuinely applicable. Informed by what the candidate said they want."],
+  "adjacent_seniority": ["the 1-2 seniority levels directly above and below their current level"],
   "what_they_want": "1-2 sentences on what they specifically said they want next",
   "location": "city/country or Remote",
   "summary": "2-sentence professional summary that incorporates what they told us"
