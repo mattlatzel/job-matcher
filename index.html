@@ -70,15 +70,15 @@
     main { flex: 1; overflow: hidden; padding: 0; }
 
     /* ── Chat section ── */
-    #chat-section { display: flex; flex-direction: column; height: 100%; }
+    #chat-section { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
     .chat-window {
       background: var(--surface);
       display: flex;
       flex-direction: column;
       flex: 1;
+      min-height: 0;
       overflow: hidden;
-      border-top: none;
     }
 
     .chat-messages {
@@ -308,11 +308,6 @@
       border-radius: 999px;
       padding: 1px 8px;
     }
-    .inbox-threshold {
-      display: flex; align-items: center; gap: 8px;
-      font-size: .82rem; color: var(--muted); font-weight: 600;
-    }
-    .inbox-threshold input[type=range] { width: 90px; }
 
     /* ── Results ── */
     #results-section { display: flex; flex-direction: column; height: 100%; }
@@ -513,7 +508,7 @@
     /* ── Full-height split layout ── */
     .app-container {
       display: grid;
-      grid-template-columns: 480px 1fr;
+      grid-template-columns: 580px 1fr;
       height: 100%;
       gap: 0;
     }
@@ -521,6 +516,7 @@
       display: flex;
       flex-direction: column;
       height: 100%;
+      overflow: hidden;
       border-right: 1px solid var(--border);
       background: #ffffff;
     }
@@ -643,7 +639,7 @@
     <div class="right-panel">
 
       <!-- Initial Placeholder State -->
-      <div id="initial-state-card" class="placeholder-card">
+      <div id="initial-state-card" class="placeholder-card" style="flex:1;">
         <div class="placeholder-icon-wrap">
           <i class="fa-solid fa-file-invoice"></i>
         </div>
@@ -652,7 +648,7 @@
       </div>
 
       <!-- ── Progress ── -->
-      <section id="progress-section" class="hidden" style="padding: 48px 24px;">
+      <section id="progress-section" class="hidden" style="flex:1; display:flex; align-items:center; justify-content:center; padding:48px 24px;">
         <div class="progress-card">
           <div class="spinner"></div>
           <div class="progress-title" id="progress-title">Starting…</div>
@@ -668,17 +664,19 @@
       <!-- ── Results ── -->
       <section id="results-section" class="hidden">
 
-        <!-- Inbox header with threshold slider -->
+        <!-- Inbox header -->
         <div class="inbox-header">
           <div class="inbox-title">
             Inbox
             <span class="inbox-count" id="threshold-count">0</span>
           </div>
-          <div class="inbox-threshold">
-            <span>Min match</span>
-            <input type="range" id="threshold-slider" min="50" max="95" value="70" step="5" />
-            <span id="threshold-value" style="color:var(--accent-cobalt); font-weight:700;">70%</span>
-          </div>
+        </div>
+
+        <!-- Threshold slider row -->
+        <div style="display:flex; align-items:center; gap:14px; padding:10px 24px; background:#fff; border-bottom:1px solid var(--border); flex-shrink:0;">
+          <span style="font-size:.82rem; font-weight:700; color:#0b1b2b; white-space:nowrap; text-transform:uppercase; letter-spacing:.04em;">Min match</span>
+          <input type="range" id="threshold-slider" min="50" max="95" value="70" step="5" style="flex:1;" />
+          <span id="threshold-value" style="font-size:1rem; font-weight:800; color:var(--accent-cobalt); min-width:40px; text-align:right;">70%</span>
         </div>
 
         <!-- Profile bar -->
