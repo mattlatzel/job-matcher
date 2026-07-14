@@ -689,11 +689,16 @@
           <span id="threshold-value" style="font-size:1rem; font-weight:800; color:var(--accent-cobalt); min-width:40px; text-align:right;">70%</span>
         </div>
 
-        <!-- Profile bar -->
-        <div id="profile-bar" class="hidden" style="padding:10px 24px; font-size:.82rem; border-bottom:1px solid var(--border); background:#fff;">
-          <i class="fa-solid fa-user-tie" style="color:var(--accent-cobalt);"></i>
-          <span class="profile-text" id="profile-text" style="margin-left:8px; font-weight:600; color:#0b1b2b;"></span>
+        <!-- Profile bar (collapsible) -->
+        <div id="profile-bar" class="hidden" onclick="toggleProfileBar()" style="padding:10px 24px; font-size:.82rem; border-bottom:1px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+          <div style="display:flex; align-items:flex-start; gap:8px; flex:1; min-width:0;">
+            <i class="fa-solid fa-user-tie" style="color:var(--accent-cobalt); margin-top:2px; flex-shrink:0;"></i>
+            <span class="profile-text" id="profile-text" style="font-weight:600; color:#0b1b2b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
+          </div>
+          <i class="fa-solid fa-chevron-down" id="profile-chevron" style="font-size:.8rem; color:var(--muted); flex-shrink:0; margin-top:3px; transition:transform .2s; transform:rotate(180deg);"></i>
         </div>
+        <!-- Profile expanded text -->
+        <div id="profile-expanded" style="padding:10px 24px 14px; font-size:.82rem; border-bottom:1px solid var(--border); background:#f8fafc; color:#334155; line-height:1.6; display:none;"></div>
 
         <!-- Gap tile (collapsed) -->
         <div id="gap-tile" class="hidden" style="border-radius:0; border-left-width:3px; margin-bottom:0; border-left:3px solid var(--red); background:#fff9f9; border-bottom:1px solid #fee2e2; padding:12px 24px;">
@@ -962,12 +967,17 @@
 
     show('results');
     if (profile) {
-      const exp = profile.years_experience ? `${profile.years_experience} yrs exp · ` : '';
-      const want = profile.what_they_want ? `  ·  Looking for: ${profile.what_they_want}` : '';
-      const adj = (profile.adjacent_titles || []).length
-        ? `  ·  Also searched: ${profile.adjacent_titles.join(', ')}`
-        : '';
-      profileText.textContent = `${profile.current_title} · ${exp}${profile.core_domain}${adj}${want}`;
+      const exp  = profile.years_experience ? `${profile.years_experience} yrs exp` : '';
+      const adj  = (profile.adjacent_titles || []).length ? `Also searched: ${profile.adjacent_titles.join(', ')}` : '';
+      const want = profile.what_they_want ? `Looking for: ${profile.what_they_want}` : '';
+
+      // Collapsed: just title + exp
+      profileText.textContent = [profile.current_title, exp].filter(Boolean).join(' · ');
+
+      // Expanded: everything
+      const expanded = document.getElementById('profile-expanded');
+      expanded.textContent = [profile.current_title, exp, profile.core_domain, adj, want].filter(Boolean).join(' · ');
+
       profileBar.classList.remove('hidden');
     }
 
@@ -1063,6 +1073,15 @@
     return wrapper;
   }
 
+  // ── Profile bar toggle ───────────────────────────────────────────────────
+  function toggleProfileBar() {
+    const expanded = document.getElementById('profile-expanded');
+    const chevron  = document.getElementById('profile-chevron');
+    const open = expanded.style.display !== 'none';
+    expanded.style.display = open ? 'none' : 'block';
+    chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+  }
+
   // ── Gap tile toggle ───────────────────────────────────────────────────────
   function toggleGapTile() {
     const body    = document.getElementById('gap-body');
@@ -1133,6 +1152,8 @@
     jobsList.innerHTML = '';
     gapList.innerHTML = '';
     profileBar.classList.add('hidden');
+    document.getElementById('profile-expanded').style.display = 'none';
+    document.getElementById('profile-chevron').style.transform = 'rotate(180deg)';
     gapTile.classList.add('hidden');
     document.getElementById('gap-body').classList.add('hidden');
     document.getElementById('gap-chevron').style.transform = '';
