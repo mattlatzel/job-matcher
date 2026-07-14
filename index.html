@@ -604,7 +604,7 @@
 <header>
   <div class="logo"><i class="fa-solid fa-briefcase"></i></div>
   <div>
-    <h1>CV Job Matcher</h1>
+    <h1>Chelsea <span style="font-weight:400; font-size:1rem; opacity:.6; font-family:'Plus Jakarta Sans',sans-serif;">· Your AI Job Advisor</span></h1>
   </div>
 </header>
 
@@ -615,8 +615,8 @@
       <!-- ── Chat ── -->
       <section id="chat-section">
         <div class="chat-header-alt">
-          <h2>Advisory Portal</h2>
-          <p>Upload your CV to start matching</p>
+          <h2>Chelsea</h2>
+          <p>Your personal job advisor — sharp, warm, and relentlessly on your side</p>
         </div>
 
         <div class="chat-window">
@@ -805,7 +805,7 @@
   })();
 
   // ── Initial greeting ──────────────────────────────────────────────────────
-  addMsg('assistant', "Hi! I'm here to help you find jobs that genuinely match your background. Start by uploading your CV — use the 📎 button. PDF, Word, or text file all work.");
+  addMsg('assistant', "Hi, I'm Chelsea! I'm going to help you find the job you actually deserve — not just any job. Upload your CV using the 📎 button and I'll take it from there. PDF, Word, or text file all work.");
   show('initial');
 
   // ── File upload ───────────────────────────────────────────────────────────
@@ -1001,7 +1001,7 @@
     // Re-open chat for refinement
     setTimeout(() => {
       const n = allJobs.filter(j => j.score >= parseInt(slider.value)).length;
-      addMsg('assistant', `Found ${n} matching job${n !== 1 ? 's' : ''}. Want to refine? Tell me to focus on specific sectors, seniority levels, salary ranges — or ask me anything about these roles.`);
+      addMsg('assistant', `Right, I found ${n} match${n !== 1 ? 'es' : ''} for you. Have a look — and if anything feels off or you want me to cast the net differently, just tell me. I'm not done until you're happy with what you're seeing.`);
       enableInput();
       chatTextInput.placeholder = 'Refine search or ask about your matches…';
     }, 600);
@@ -1162,7 +1162,7 @@
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV';
     show('initial');
-    addMsg('assistant', "Hi! I'm here to help you find jobs that genuinely match your background. Start by uploading your CV — use the 📎 button. PDF, Word, or text file all work.");
+    addMsg('assistant', "Hi, I'm Chelsea! I'm going to help you find the job you actually deserve — not just any job. Upload your CV using the 📎 button and I'll take it from there. PDF, Word, or text file all work.");
   }
 </script>
 </body>
