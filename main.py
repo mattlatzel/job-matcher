@@ -598,6 +598,38 @@ async def chat_turn(
     return {"message": clean, "done": done}
 
 
+REFINE_SYSTEM = """You are a career advisor. You've just run a London job search for this candidate and results are on screen.
+
+You can now:
+1. Answer questions about specific roles or the job market
+2. Refine the search — e.g. change seniority, sector, role type, salary expectations
+
+If the candidate wants a refined search, ask at most ONE clarifying question if needed, then confirm what you'll do and end your message with |||DONE||| on its own line. Do NOT output |||DONE||| for general conversation.
+
+Keep replies concise (2-4 sentences).
+
+CV:
+{cv_text}"""
+
+
+async def refine_turn(
+    client: anthropic.AsyncAnthropic,
+    cv_text: str,
+    messages: list[dict],
+) -> dict:
+    system = REFINE_SYSTEM.format(cv_text=cv_text[:4000])
+    resp = await client.messages.create(
+        model=SONNET,
+        max_tokens=400,
+        system=system,
+        messages=messages,
+    )
+    text = next(b.text for b in resp.content if hasattr(b, "text")).strip()
+    done = "|||DONE|||" in text
+    clean = text.replace("|||DONE|||", "").strip()
+    return {"message": clean, "done": done}
+
+
 async def extract_profile_from_conversation(
     cv_text: str,
     messages: list[dict],
@@ -699,6 +731,7 @@ async def process_cv(session_id: str, cv_text: str, conversation_messages: list 
         print(f"✓ Found {len(session['gap_analysis'])} gaps")
 
         session["status"] = "done"
+        session["chat_status"] = "done"
         print(f"✓ Done! {len([r for r in all_results if r['score'] >= 70])} jobs ≥70%")
 
     except Exception as exc:
@@ -771,13 +804,18 @@ async def chat_message_endpoint(
     if session_id not in sessions:
         raise HTTPException(404, "Session not found")
     s = sessions[session_id]
-    if s.get("chat_status") != "chatting":
+    if s.get("chat_status") not in ("chatting", "done"):
         raise HTTPException(400, "Chat is not active")
 
     s["messages"].append({"role": "user", "content": body.message})
 
     ai_client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
-    result = await chat_turn(ai_client, s["cv_text"], s["messages"])
+
+    if s.get("chat_status") == "done":
+        result = await refine_turn(ai_client, s["cv_text"], s["messages"])
+    else:
+        result = await chat_turn(ai_client, s["cv_text"], s["messages"])
+
     s["messages"].append({"role": "assistant", "content": result["message"]})
 
     if result["done"]:

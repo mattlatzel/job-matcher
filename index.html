@@ -508,10 +508,17 @@
     /* ── Full-height split layout ── */
     .app-container {
       display: grid;
-      grid-template-columns: 580px 1fr;
+      grid-template-columns: var(--chat-width, 640px) 5px 1fr;
       height: 100%;
       gap: 0;
     }
+    .resize-handle {
+      background: var(--border);
+      cursor: col-resize;
+      transition: background .15s;
+      flex-shrink: 0;
+    }
+    .resize-handle:hover, .resize-handle.dragging { background: var(--accent-cobalt); }
     .left-panel {
       display: flex;
       flex-direction: column;
@@ -634,6 +641,9 @@
         <p class="chat-hint">Upload as <strong>.docx</strong> to unlock AI CV improvement after matching</p>
       </section>
     </div>
+
+    <!-- Drag handle -->
+    <div class="resize-handle" id="resize-handle"></div>
 
     <!-- Right Panel: Dashboard -->
     <div class="right-panel">
@@ -760,6 +770,34 @@
   const slider          = document.getElementById('threshold-slider');
   const sliderValue     = document.getElementById('threshold-value');
   const sliderCount     = document.getElementById('threshold-count');
+
+  // ── Resizable panel ──────────────────────────────────────────────────────
+  (function() {
+    const handle    = document.getElementById('resize-handle');
+    const container = document.querySelector('.app-container');
+    let dragging = false;
+
+    handle.addEventListener('mousedown', e => {
+      dragging = true;
+      handle.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const rect = container.getBoundingClientRect();
+      const w = Math.max(360, Math.min(window.innerWidth - 300, e.clientX - rect.left));
+      container.style.setProperty('--chat-width', w + 'px');
+    });
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+  })();
 
   // ── Initial greeting ──────────────────────────────────────────────────────
   addMsg('assistant', "Hi! I'm here to help you find jobs that genuinely match your background. Start by uploading your CV — use the 📎 button. PDF, Word, or text file all work.");
@@ -949,6 +987,14 @@
 
     visibleN = 10;
     renderJobs();
+
+    // Re-open chat for refinement
+    setTimeout(() => {
+      const n = allJobs.filter(j => j.score >= parseInt(slider.value)).length;
+      addMsg('assistant', `Found ${n} matching job${n !== 1 ? 's' : ''}. Want to refine? Tell me to focus on specific sectors, seniority levels, salary ranges — or ask me anything about these roles.`);
+      enableInput();
+      chatTextInput.placeholder = 'Refine search or ask about your matches…';
+    }, 600);
   }
 
   // ── Render jobs ───────────────────────────────────────────────────────────
