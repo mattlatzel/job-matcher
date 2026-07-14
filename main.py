@@ -34,7 +34,8 @@ app.add_middleware(
 sessions: dict = {}
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-JSEARCH_API_KEY = os.getenv("JSEARCH_API_KEY")
+JSEARCH_API_KEY   = os.getenv("JSEARCH_API_KEY")
+REED_API_KEY      = os.getenv("REED_API_KEY")  # optional — activates when set
 
 SONNET = "claude-sonnet-5"   # profile extraction — needs quality reasoning
 HAIKU  = "claude-haiku-4-5-20251001"   # job scoring — runs ~20+ times, needs speed
@@ -138,30 +139,90 @@ async def _fetch_query_standalone(query: str, pages: int = 2) -> list[dict]:
         return await _fetch_query(client, query, pages)
 
 
+async def _fetch_reed(keywords: str, location: str = "London", results_to_take: int = 100) -> list[dict]:
+    """Fetch jobs from Reed API and normalise to our internal format."""
+    if not REED_API_KEY:
+        return []
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(
+                "https://www.reed.co.uk/api/1.0/search",
+                params={
+                    "keywords":       keywords,
+                    "locationName":   location,
+                    "distancefromLocation": 15,
+                    "resultsToTake":  results_to_take,
+                    "permanent":      True,
+                },
+                auth=(REED_API_KEY, ""),
+            )
+        data = resp.json()
+        jobs = data.get("results", [])
+        normalised = []
+        for j in jobs:
+            # Map Reed fields → our internal schema (same as JSearch output)
+            min_s = j.get("minimumSalary")
+            max_s = j.get("maximumSalary")
+            salary_str = None
+            if min_s and max_s:
+                salary_str = f"£{int(min_s):,} – £{int(max_s):,} / yr"
+            elif min_s:
+                salary_str = f"From £{int(min_s):,}"
+            elif max_s:
+                salary_str = f"Up to £{int(max_s):,}"
+
+            normalised.append({
+                "job_id":          f"reed_{j.get('jobId')}",
+                "job_title":       j.get("jobTitle", ""),
+                "employer_name":   j.get("employerName", ""),
+                "job_city":        j.get("locationName", "London"),
+                "job_country":     "United Kingdom",
+                "job_is_remote":   False,
+                "job_description": j.get("jobDescription", ""),
+                "job_apply_link":  j.get("jobUrl", ""),
+                "job_google_link": j.get("jobUrl", ""),
+                "job_posted_at_datetime_utc": j.get("date", ""),
+                # Pre-normalised salary so score_batch can skip its own parsing
+                "_salary_display": salary_str,
+            })
+        print(f"  Reed fetched {len(normalised)} jobs for '{keywords}'")
+        return normalised
+    except Exception as e:
+        print(f"  Reed error ({keywords}): {e}")
+        return []
+
+
 async def fetch_jobs(profile: dict) -> list[dict]:
     title           = profile.get("current_title", "professional")
     domain          = profile.get("job_search_query") or title
-    adjacent_titles = profile.get("adjacent_titles", [])[:4]  # up to 4 adjacent
+    adjacent_titles = profile.get("adjacent_titles", [])[:4]
 
-    # Build all queries
-    queries = [
-        (f"{domain} in London",  6),   # specific + domain, most pages
-        (f"{title} in London",   4),   # title only
+    # JSearch queries
+    jsearch_queries = [
+        (f"{domain} in London",  6),
+        (f"{title} in London",   4),
     ]
     for adj in adjacent_titles:
-        queries.append((f"{adj} in London", 3))
+        jsearch_queries.append((f"{adj} in London", 3))
 
-    print(f"  Queries: {[q for q, _ in queries]}")
+    print(f"  JSearch queries: {[q for q, _ in jsearch_queries]}")
+
+    # Reed keywords (no location suffix needed — passed as param)
+    reed_keywords = [domain, title] + adjacent_titles[:2]
 
     async with httpx.AsyncClient(timeout=45) as client:
-        results = await asyncio.gather(*[
-            _fetch_query(client, q, pages=p) for q, p in queries
+        jsearch_results = await asyncio.gather(*[
+            _fetch_query(client, q, pages=p) for q, p in jsearch_queries
         ])
 
-    # Merge and deduplicate
+    reed_results = await asyncio.gather(*[
+        _fetch_reed(kw) for kw in reed_keywords
+    ])
+
+    # Merge and deduplicate by job_id
     seen: set = set()
     all_jobs: list[dict] = []
-    for batch in results:
+    for batch in list(jsearch_results) + list(reed_results):
         for job in batch:
             jid = job.get("job_id")
             if jid and jid not in seen:
@@ -310,22 +371,23 @@ JSON only. No prose."""
             "strengths": [], "gaps": [], "reason": "Could not evaluate."
         }
 
-        # Build salary string if available
-        salary = None
-        min_s = job.get("job_min_salary")
-        max_s = job.get("job_max_salary")
-        currency = job.get("job_salary_currency") or "£"
-        period = (job.get("job_salary_period") or "").lower()
-        if min_s and max_s:
-            salary = f"{currency}{int(min_s):,} – {currency}{int(max_s):,}"
-            if period in ("year", "annual"):
-                salary += " / yr"
-            elif period == "month":
-                salary += " / mo"
-        elif min_s:
-            salary = f"From {currency}{int(min_s):,}"
-        elif max_s:
-            salary = f"Up to {currency}{int(max_s):,}"
+        # Build salary string — use pre-normalised Reed value if present
+        salary = job.get("_salary_display")
+        if not salary:
+            min_s = job.get("job_min_salary")
+            max_s = job.get("job_max_salary")
+            currency = job.get("job_salary_currency") or "£"
+            period = (job.get("job_salary_period") or "").lower()
+            if min_s and max_s:
+                salary = f"{currency}{int(min_s):,} – {currency}{int(max_s):,}"
+                if period in ("year", "annual"):
+                    salary += " / yr"
+                elif period == "month":
+                    salary += " / mo"
+            elif min_s:
+                salary = f"From {currency}{int(min_s):,}"
+            elif max_s:
+                salary = f"Up to {currency}{int(max_s):,}"
 
         results.append({
             "title":           job.get("job_title", "Unknown Role"),
