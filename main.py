@@ -17,6 +17,7 @@ import httpx
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
+from pydantic import BaseModel
 
 # ── App setup ────────────────────────────────────────────────────────────────
 
@@ -483,17 +484,120 @@ Return JSON array only:
         return []
 
 
+# ── Chat: conversational CV intake ───────────────────────────────────────────
+
+CHAT_SYSTEM = """You are a warm, friendly career advisor helping someone find their next job in London.
+You have just read their CV. Have a brief natural conversation to understand:
+1. What they actually built or owned in their key roles (CVs are always vague)
+2. Whether they lean more technical/hands-on or managerial/strategic
+3. What they specifically want next — industry, role type, company stage, remote vs office
+4. Any strong preferences or constraints
+
+Rules:
+- Ask ONE focused question at a time — keep it short and conversational
+- Always reference something specific from their CV to make it feel personal
+- Do NOT ask generic questions like "tell me about yourself"
+- After the candidate has answered 4 or more questions, wrap up naturally
+- In your wrap-up, say you have a clear picture and are starting the search
+- At the very end of your wrap-up message ONLY, append the exact text: |||DONE|||
+
+CV:
+{cv_text}"""
+
+
+async def chat_turn(
+    client: anthropic.AsyncAnthropic,
+    cv_text: str,
+    messages: list[dict],
+) -> dict:
+    user_count = sum(1 for m in messages if m["role"] == "user")
+
+    system = CHAT_SYSTEM.format(cv_text=cv_text[:5000])
+
+    # If no messages yet, bootstrap with a user opener
+    msgs = messages if messages else [{"role": "user", "content": "Hi, I just uploaded my CV."}]
+
+    # After 4 user answers, explicitly instruct Claude to wrap up
+    if user_count >= 4:
+        system += "\n\nIMPORTANT: You now have enough information. This must be your final message. Wrap up warmly, tell them you're starting the job search, and end with |||DONE|||"
+
+    resp = await client.messages.create(
+        model=SONNET,
+        max_tokens=600,
+        system=system,
+        messages=msgs,
+    )
+
+    text = next(b.text for b in resp.content if hasattr(b, "text")).strip()
+    done = "|||DONE|||" in text
+    clean = text.replace("|||DONE|||", "").strip()
+    return {"message": clean, "done": done}
+
+
+async def extract_profile_from_conversation(
+    cv_text: str,
+    messages: list[dict],
+) -> dict:
+    """Richer profile extraction using CV + what candidate told us in chat."""
+    # Build readable conversation (skip bootstrap message)
+    convo_lines = []
+    for m in messages[1:]:  # skip bootstrap
+        role = "Advisor" if m["role"] == "assistant" else "Candidate"
+        convo_lines.append(f"{role}: {m['content']}")
+    convo = "\n".join(convo_lines)
+
+    client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
+    resp = await client.messages.create(
+        model=SONNET,
+        max_tokens=1500,
+        messages=[{
+            "role": "user",
+            "content": f"""Extract a rich professional profile from this CV and follow-up conversation.
+The conversation reveals what the candidate actually did and what they're looking for.
+
+CV:
+{cv_text[:6000]}
+
+CONVERSATION:
+{convo}
+
+Return exactly this JSON structure:
+{{
+  "current_title": "most recent or target job title",
+  "seniority": "junior | mid | senior | lead | executive",
+  "years_experience": <number>,
+  "core_domain": "1-sentence description of their main professional domain",
+  "core_skills": ["top 6 skills, informed by the conversation"],
+  "job_search_query": "best search query to find matching jobs",
+  "adjacent_titles": ["2-3 alternative job titles they could qualify for"],
+  "what_they_want": "1-2 sentences on what they specifically said they want next",
+  "location": "city/country or Remote",
+  "summary": "2-sentence professional summary that incorporates what they told us"
+}}
+
+JSON only. No prose."""
+        }]
+    )
+
+    text = next(b.text for b in resp.content if hasattr(b, "text")).strip()
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    return json.loads(match.group() if match else text)
+
+
 # ── Background worker ─────────────────────────────────────────────────────────
 
-async def process_cv(session_id: str, cv_text: str) -> None:
+async def process_cv(session_id: str, cv_text: str, conversation_messages: list = None) -> None:
     session = sessions[session_id]
     try:
         ai_client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
 
-        # 1. Extract profile
+        # 1. Extract profile (enriched if we have conversation)
         print("▶ Step 1: Extracting profile…")
         session["status"] = "extracting_profile"
-        profile = await extract_profile(cv_text)
+        if conversation_messages:
+            profile = await extract_profile_from_conversation(cv_text, conversation_messages)
+        else:
+            profile = await extract_profile(cv_text)
         session["profile"] = profile
         print(f"✓ Profile: {profile.get('current_title')}")
 
@@ -541,6 +645,83 @@ async def process_cv(session_id: str, cv_text: str) -> None:
 
 
 # ── API Routes ────────────────────────────────────────────────────────────────
+
+class ChatMessageBody(BaseModel):
+    message: str
+
+@app.post("/api/chat/start")
+async def chat_start(file: UploadFile = File(...)):
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(500, "ANTHROPIC_API_KEY not set")
+    if not JSEARCH_API_KEY:
+        raise HTTPException(500, "JSEARCH_API_KEY not set")
+
+    content = await file.read()
+    name = (file.filename or "").lower()
+
+    if name.endswith(".pdf"):
+        cv_text = parse_pdf(content)
+    elif name.endswith(".docx"):
+        cv_text = parse_docx(content)
+    elif name.endswith(".txt"):
+        cv_text = content.decode("utf-8", errors="ignore")
+    else:
+        raise HTTPException(400, "Unsupported file type. Please upload PDF, DOCX, or TXT.")
+
+    if len(cv_text.strip()) < 100:
+        raise HTTPException(400, "Could not extract text from the CV. Try a different format.")
+
+    session_id = str(uuid.uuid4())
+    ai_client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
+    first = await chat_turn(ai_client, cv_text, [])
+
+    bootstrap = [{"role": "user", "content": "Hi, I just uploaded my CV."}]
+    sessions[session_id] = {
+        "chat_status": "chatting",
+        "cv_text":     cv_text,
+        "messages":    bootstrap + [{"role": "assistant", "content": first["message"]}],
+        "docx_bytes":  content if name.endswith(".docx") else None,
+        # search fields
+        "status":      "starting",
+        "profile":     None,
+        "results":     [],
+        "gap_analysis": [],
+        "total_jobs":  0,
+        "error":       None,
+    }
+
+    return {
+        "session_id": session_id,
+        "message":    first["message"],
+        "done":       first["done"],
+        "is_docx":    name.endswith(".docx"),
+    }
+
+
+@app.post("/api/chat/message/{session_id}")
+async def chat_message_endpoint(
+    session_id: str,
+    body: ChatMessageBody,
+    background_tasks: BackgroundTasks,
+):
+    if session_id not in sessions:
+        raise HTTPException(404, "Session not found")
+    s = sessions[session_id]
+    if s.get("chat_status") != "chatting":
+        raise HTTPException(400, "Chat is not active")
+
+    s["messages"].append({"role": "user", "content": body.message})
+
+    ai_client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
+    result = await chat_turn(ai_client, s["cv_text"], s["messages"])
+    s["messages"].append({"role": "assistant", "content": result["message"]})
+
+    if result["done"]:
+        s["chat_status"] = "searching"
+        background_tasks.add_task(process_cv, session_id, s["cv_text"], s["messages"])
+
+    return {"message": result["message"], "done": result["done"]}
+
 
 @app.post("/api/analyze")
 async def analyze(background_tasks: BackgroundTasks, file: UploadFile = File(...)):

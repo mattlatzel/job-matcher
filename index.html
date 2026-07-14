@@ -55,37 +55,141 @@
 
     main { max-width: 760px; margin: 0 auto; padding: 40px 24px; }
 
-    /* ── Upload card ── */
-    #upload-section { text-align: center; }
-    #upload-section h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
-    #upload-section .subtitle { color: var(--muted); margin-bottom: 32px; font-size: .95rem; }
+    /* ── Chat section ── */
+    #chat-section { }
+    .chat-header { text-align: center; margin-bottom: 24px; }
+    .chat-header h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+    .chat-header p  { color: var(--muted); font-size: .95rem; }
 
-    #drop-zone {
-      border: 2px dashed var(--border);
+    .chat-window {
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 56px 32px;
-      cursor: pointer;
-      transition: border-color .2s, background .2s;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      height: 480px;
+      overflow: hidden;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg {
+      max-width: 78%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: .9rem;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .msg.assistant {
+      background: #f1f5f9;
+      color: var(--text);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .msg.user {
+      background: var(--accent);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.file-msg {
+      background: #ede9fe;
+      color: #4c1d95;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      font-size: .85rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* Typing indicator */
+    .typing-dots {
+      align-self: flex-start;
+      background: #f1f5f9;
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      padding: 12px 16px;
+      display: flex; gap: 5px; align-items: center;
+    }
+    .typing-dots span {
+      width: 7px; height: 7px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: tdot 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes tdot {
+      0%, 60%, 100% { transform: translateY(0); opacity: .6; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* Input row */
+    .chat-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
       background: var(--surface);
     }
-    #drop-zone:hover, #drop-zone.drag-over {
-      border-color: var(--accent);
-      background: var(--accent-light);
+    .chat-attach-label {
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 6px 8px;
+      border-radius: 6px;
+      transition: color .15s, background .15s;
+      flex-shrink: 0;
     }
-    #drop-zone .icon { font-size: 2.5rem; color: var(--accent); margin-bottom: 16px; }
-    #drop-zone .primary { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
-    #drop-zone .secondary { font-size: .85rem; color: var(--muted); }
-    #file-input { display: none; }
-    .docx-hint {
-      margin-top: 12px;
-      font-size: .82rem;
-      color: var(--accent);
-      background: var(--accent-light);
-      border-radius: 8px;
-      padding: 8px 14px;
-      display: inline-block;
+    .chat-attach-label:hover { color: var(--accent); background: var(--accent-light); }
+    #chat-file-input { display: none; }
+    .chat-text-input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 9px 16px;
+      font-size: .9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .15s;
+      resize: none;
+      line-height: 1.4;
     }
+    .chat-text-input:focus { border-color: var(--accent); }
+    .chat-text-input:disabled { background: #f8f9fc; color: var(--muted); }
+    .chat-send-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 38px; height: 38px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: opacity .15s;
+      font-size: .85rem;
+    }
+    .chat-send-btn:hover { opacity: .85; }
+    .chat-send-btn:disabled { opacity: .35; cursor: not-allowed; }
 
+    .chat-hint {
+      text-align: center;
+      margin-top: 10px;
+      font-size: .78rem;
+      color: var(--muted);
+    }
+    .chat-hint strong { color: var(--accent); }
+
+    /* ── Buttons ── */
     .btn {
       display: inline-flex; align-items: center; gap: 8px;
       padding: 10px 22px;
@@ -101,8 +205,6 @@
     .btn-outline { background: white; color: var(--accent); border: 1.5px solid var(--accent); }
     .btn-outline:hover { background: var(--accent-light); }
     .btn:disabled { opacity: .4; cursor: not-allowed; }
-
-    #upload-btn { margin-top: 20px; }
 
     /* ── Progress ── */
     #progress-section { display: none; }
@@ -182,7 +284,6 @@
     .score-badge .pct  { font-size: 1.4rem; line-height: 1; }
     .score-badge .pct-label { font-size: .6rem; text-transform: uppercase; letter-spacing: .05em; opacity: .8; }
 
-    .score-95 { background: #dcfce7; color: #15803d; }
     .score-90 { background: #dcfce7; color: #15803d; }
     .score-85 { background: #dcfce7; color: #15803d; }
     .score-80 { background: #fef9c3; color: #854d0e; }
@@ -301,7 +402,6 @@
     .gap-item { margin-bottom: 14px; }
     .gap-item:last-child { margin-bottom: 0; }
     .gap-title { font-weight: 700; font-size: .88rem; color: var(--text); margin-bottom: 2px; }
-    .gap-detail { font-size: .83rem; color: var(--muted); margin-bottom: 3px; }
     .improve-btn-wrap { margin-top: 16px; }
     .btn-improve {
       background: var(--accent); color: white;
@@ -341,28 +441,33 @@
 
 <main>
 
-  <!-- ── Upload ── -->
-  <section id="upload-section">
-    <h2>Find your perfect job match</h2>
-    <p class="subtitle">Upload your CV and we'll find roles where your experience genuinely fits — no keyword tricks.</p>
-
-    <div id="drop-zone">
-      <div class="icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-      <div class="primary">Drop your CV here</div>
-      <div class="secondary">PDF, DOCX, or TXT · Max 10 MB</div>
-      <input type="file" id="file-input" accept=".pdf,.docx,.txt" />
+  <!-- ── Chat ── -->
+  <section id="chat-section">
+    <div class="chat-header">
+      <h2>Find your perfect job match</h2>
+      <p>Chat with our AI advisor — upload your CV and answer a few quick questions</p>
     </div>
 
-    <div class="docx-hint">
-      <i class="fa-solid fa-wand-magic-sparkles"></i>
-      Upload as <strong>.docx</strong> to unlock <strong>AI CV Improvement</strong> — we'll rewrite your CV based on the gaps we find
+    <div class="chat-window">
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-row">
+        <label class="chat-attach-label" title="Upload CV">
+          <i class="fa-solid fa-paperclip"></i>
+          <input type="file" id="chat-file-input" accept=".pdf,.docx,.txt" />
+        </label>
+        <input
+          type="text"
+          class="chat-text-input"
+          id="chat-text"
+          placeholder="Upload your CV to get started…"
+          disabled
+        />
+        <button class="chat-send-btn" id="chat-send-btn" disabled>
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
     </div>
-
-    <div id="file-name-row" class="hidden" style="margin-top:12px; color: var(--muted); font-size:.88rem; text-align:center;"></div>
-
-    <button class="btn btn-primary" id="upload-btn" disabled>
-      <i class="fa-solid fa-magnifying-glass"></i> Find Matching Jobs
-    </button>
+    <p class="chat-hint">Upload as <strong>.docx</strong> to unlock AI CV improvement after matching</p>
   </section>
 
   <!-- ── Progress ── -->
@@ -425,7 +530,7 @@
     <div id="no-results" class="hidden">
       <div class="icon">😕</div>
       <h3>No strong matches found right now</h3>
-      <p>We couldn't find jobs with 80%+ fit this time. The job market may not have open roles that align closely with your background today — try again in a few days.</p>
+      <p>We couldn't find jobs matching your threshold. Try lowering the slider or check back in a few days.</p>
     </div>
 
     <div id="load-more-wrap" class="hidden">
@@ -443,21 +548,22 @@
 
 <script>
   // ── State ──────────────────────────────────────────────────────────────────
-  let sessionId  = null;
-  let pollTimer  = null;
-  let profile    = null;
-  let allJobs    = [];   // all scored jobs from backend
-  let visibleN   = 10;  // how many we're currently showing
-  let isDocx     = false;
+  let sessionId   = null;
+  let pollTimer   = null;
+  let profile     = null;
+  let allJobs     = [];
+  let visibleN    = 10;
+  let isDocx      = false;
+  let chatWaiting = false;
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
-  const dropZone        = document.getElementById('drop-zone');
-  const fileInput       = document.getElementById('file-input');
-  const fileNameRow     = document.getElementById('file-name-row');
-  const uploadBtn       = document.getElementById('upload-btn');
-  const uploadSection   = document.getElementById('upload-section');
+  const chatSection     = document.getElementById('chat-section');
   const progressSection = document.getElementById('progress-section');
   const resultsSection  = document.getElementById('results-section');
+  const chatMessages    = document.getElementById('chat-messages');
+  const chatFileInput   = document.getElementById('chat-file-input');
+  const chatTextInput   = document.getElementById('chat-text');
+  const chatSendBtn     = document.getElementById('chat-send-btn');
   const progressTitle   = document.getElementById('progress-title');
   const progressSub     = document.getElementById('progress-sub');
   const jobsList        = document.getElementById('jobs-list');
@@ -473,25 +579,129 @@
   const sliderValue     = document.getElementById('threshold-value');
   const sliderCount     = document.getElementById('threshold-count');
 
-  // ── Upload / drag-drop ────────────────────────────────────────────────────
-  dropZone.addEventListener('click', () => fileInput.click());
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault(); dropZone.classList.remove('drag-over');
-    const f = e.dataTransfer.files[0]; if (f) setFile(f);
-  });
-  fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+  // ── Initial greeting ──────────────────────────────────────────────────────
+  addMsg('assistant', "Hi! I'm here to help you find jobs that genuinely match your background. Start by uploading your CV — use the 📎 button. PDF, Word, or text file all work.");
 
-  function setFile(f) {
-    fileInput._file = f;
-    isDocx = f.name.toLowerCase().endsWith('.docx');
-    fileNameRow.textContent = `📄  ${f.name}  (${(f.size / 1024).toFixed(0)} KB)`;
-    fileNameRow.classList.remove('hidden');
-    uploadBtn.disabled = false;
+  // ── File upload ───────────────────────────────────────────────────────────
+  chatFileInput.addEventListener('change', () => {
+    if (chatFileInput.files[0]) uploadCV(chatFileInput.files[0]);
+  });
+
+  async function uploadCV(file) {
+    addMsg('file', `📄  ${file.name}`);
+    setChatWaiting(true);
+
+    const form = new FormData();
+    form.append('file', file);
+
+    try {
+      const res = await fetch('/api/chat/start', { method: 'POST', body: form });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+        setChatWaiting(false);
+        addMsg('assistant', `Sorry, I couldn't read that file: ${err.detail || 'Unknown error'}`);
+        return;
+      }
+      const data = await res.json();
+      sessionId = data.session_id;
+      isDocx    = data.is_docx;
+
+      setChatWaiting(false);
+      addMsg('assistant', data.message);
+
+      if (data.done) {
+        startSearch();
+      } else {
+        enableInput();
+      }
+    } catch(e) {
+      setChatWaiting(false);
+      addMsg('assistant', 'Something went wrong connecting to the server. Please try again.');
+    }
   }
 
-  uploadBtn.addEventListener('click', startAnalysis);
+  // ── Send message ──────────────────────────────────────────────────────────
+  chatTextInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  chatSendBtn.addEventListener('click', sendMessage);
+
+  async function sendMessage() {
+    const text = chatTextInput.value.trim();
+    if (!text || chatWaiting || !sessionId) return;
+
+    addMsg('user', text);
+    chatTextInput.value = '';
+    disableInput();
+    setChatWaiting(true);
+
+    try {
+      const res = await fetch(`/api/chat/message/${sessionId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+      });
+      const data = await res.json();
+      setChatWaiting(false);
+      addMsg('assistant', data.message);
+
+      if (data.done) {
+        startSearch();
+      } else {
+        enableInput();
+      }
+    } catch(e) {
+      setChatWaiting(false);
+      addMsg('assistant', 'Something went wrong. Please try again.');
+      enableInput();
+    }
+  }
+
+  // ── Transition to search ──────────────────────────────────────────────────
+  function startSearch() {
+    disableInput();
+    setTimeout(() => {
+      show('progress');
+      setStep(1);
+      pollTimer = setInterval(pollStatus, 2000);
+    }, 1200);
+  }
+
+  // ── Chat helpers ──────────────────────────────────────────────────────────
+  function addMsg(role, text) {
+    const div = document.createElement('div');
+    div.className = role === 'file' ? 'msg file-msg' : `msg ${role}`;
+    div.textContent = text;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function setChatWaiting(waiting) {
+    chatWaiting = waiting;
+    const existing = document.getElementById('typing-indicator');
+    if (waiting && !existing) {
+      const dots = document.createElement('div');
+      dots.className = 'typing-dots';
+      dots.id = 'typing-indicator';
+      dots.innerHTML = '<span></span><span></span><span></span>';
+      chatMessages.appendChild(dots);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    } else if (!waiting && existing) {
+      existing.remove();
+    }
+  }
+
+  function enableInput() {
+    chatTextInput.disabled = false;
+    chatSendBtn.disabled = false;
+    chatTextInput.placeholder = 'Type your answer…';
+    chatTextInput.focus();
+  }
+
+  function disableInput() {
+    chatTextInput.disabled = true;
+    chatSendBtn.disabled = true;
+  }
 
   // ── Slider ────────────────────────────────────────────────────────────────
   slider.addEventListener('input', () => {
@@ -499,28 +709,6 @@
     visibleN = 10;
     renderJobs();
   });
-
-  // ── Start analysis ────────────────────────────────────────────────────────
-  async function startAnalysis() {
-    const file = fileInput._file || fileInput.files[0];
-    if (!file) return;
-    uploadBtn.disabled = true;
-    show('progress'); setStep(1);
-
-    const form = new FormData();
-    form.append('file', file);
-    let res;
-    try { res = await fetch('/api/analyze', { method: 'POST', body: form }); }
-    catch(e) { alert('Server not reachable. Is the backend running?'); show('upload'); return; }
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
-      alert('Error: ' + (err.detail || 'Something went wrong'));
-      show('upload'); return;
-    }
-    sessionId = (await res.json()).session_id;
-    pollTimer = setInterval(pollStatus, 2000);
-  }
 
   // ── Polling ───────────────────────────────────────────────────────────────
   const STATUS_LABELS = {
@@ -542,10 +730,10 @@
     setStep(STATUS_STEP[data.status] || 1, data.status);
     if (data.profile && !profile) profile = data.profile;
     if (data.status === 'done')  { clearInterval(pollTimer); await loadResults(); }
-    if (data.status === 'error') { clearInterval(pollTimer); alert('Error: ' + (data.error || 'Unknown')); show('upload'); }
+    if (data.status === 'error') { clearInterval(pollTimer); alert('Error: ' + (data.error || 'Unknown')); show('chat'); }
   }
 
-  // ── Load all results once, then filter client-side ────────────────────────
+  // ── Load results ──────────────────────────────────────────────────────────
   async function loadResults() {
     const res  = await fetch(`/api/results/${sessionId}`);
     const data = await res.json();
@@ -554,14 +742,14 @@
     show('results');
     if (profile) {
       const exp = profile.years_experience ? `${profile.years_experience} yrs exp · ` : '';
+      const want = profile.what_they_want ? `  ·  Looking for: ${profile.what_they_want}` : '';
       const adj = (profile.adjacent_titles || []).length
         ? `  ·  Also searched: ${profile.adjacent_titles.join(', ')}`
         : '';
-      profileText.textContent = `${profile.current_title} · ${exp}${profile.core_domain}${adj}`;
+      profileText.textContent = `${profile.current_title} · ${exp}${profile.core_domain}${adj}${want}`;
       profileBar.classList.remove('hidden');
     }
 
-    // Render gap analysis tile
     const gaps = data.gap_analysis || [];
     if (gaps.length > 0) {
       gapList.innerHTML = gaps.map(g => `
@@ -570,7 +758,6 @@
           <div class="gap-action">→ ${esc(g.action)}</div>
         </div>`).join('');
       gapTile.classList.remove('hidden');
-      // Show improve button only if a .docx was uploaded
       if (isDocx) {
         document.getElementById('improve-btn-wrap').classList.remove('hidden');
       }
@@ -580,7 +767,7 @@
     renderJobs();
   }
 
-  // ── Render based on slider threshold + visibleN ───────────────────────────
+  // ── Render jobs ───────────────────────────────────────────────────────────
   function renderJobs() {
     const threshold = parseInt(slider.value);
     const filtered  = allJobs.filter(j => j.score >= threshold);
@@ -601,17 +788,10 @@
     jobsList.innerHTML = '';
     showing.forEach(job => jobsList.appendChild(buildCard(job)));
 
-    if (visibleN < filtered.length) {
-      loadMoreWrap.classList.remove('hidden');
-    } else {
-      loadMoreWrap.classList.add('hidden');
-    }
+    loadMoreWrap.classList.toggle('hidden', visibleN >= filtered.length);
   }
 
-  loadMoreBtn.addEventListener('click', () => {
-    visibleN += 10;
-    renderJobs();
-  });
+  loadMoreBtn.addEventListener('click', () => { visibleN += 10; renderJobs(); });
 
   // ── Build job card ────────────────────────────────────────────────────────
   function buildCard(job) {
@@ -626,28 +806,19 @@
       ? `<span class="salary-chip"><i class="fa-solid fa-sterling-sign"></i> ${esc(job.salary)}</span>`
       : '';
 
-    const postedHtml = job.posted ? `<span class="posted-date">Posted: ${job.posted}</span>` : '';
-    const remoteBadge = job.is_remote ? '<span class="badge">Remote</span>' : '';
+    const postedHtml    = job.posted ? `<span class="posted-date">Posted: ${job.posted}</span>` : '';
+    const remoteBadge   = job.is_remote ? '<span class="badge">Remote</span>' : '';
 
-    // ── Match breakdown ──
-    const seniorityChip = `<span class="chip ${job.seniority_match ? 'chip-match' : 'chip-miss'}">
-      ${job.seniority_match ? '✓' : '⚠'} Seniority</span>`;
-    const domainChip = `<span class="chip ${job.domain_match ? 'chip-match' : 'chip-miss'}">
-      ${job.domain_match ? '✓' : '⚠'} Domain</span>`;
-
-    const strengthChips = (job.strengths || []).map(s =>
-      `<span class="chip chip-strength">+ ${esc(s)}</span>`).join('');
-    const gapChips = (job.gaps || []).map(g =>
-      `<span class="chip chip-gap">⚠ ${esc(g)}</span>`).join('');
+    const seniorityChip = `<span class="chip ${job.seniority_match ? 'chip-match' : 'chip-miss'}">${job.seniority_match ? '✓' : '⚠'} Seniority</span>`;
+    const domainChip    = `<span class="chip ${job.domain_match ? 'chip-match' : 'chip-miss'}">${job.domain_match ? '✓' : '⚠'} Domain</span>`;
+    const strengthChips = (job.strengths || []).map(s => `<span class="chip chip-strength">+ ${esc(s)}</span>`).join('');
+    const gapChips      = (job.gaps || []).map(g => `<span class="chip chip-gap">⚠ ${esc(g)}</span>`).join('');
 
     const breakdownHtml = `
       <div class="breakdown">
-        <div class="breakdown-row">
-          <span class="breakdown-label">Fit</span>
-          ${seniorityChip}${domainChip}
-        </div>
+        <div class="breakdown-row"><span class="breakdown-label">Fit</span>${seniorityChip}${domainChip}</div>
         ${strengthChips ? `<div class="breakdown-row"><span class="breakdown-label">Strong</span>${strengthChips}</div>` : ''}
-        ${gapChips     ? `<div class="breakdown-row"><span class="breakdown-label">Gaps</span>${gapChips}</div>` : ''}
+        ${gapChips      ? `<div class="breakdown-row"><span class="breakdown-label">Gaps</span>${gapChips}</div>` : ''}
       </div>`;
 
     const card = document.createElement('div');
@@ -677,13 +848,40 @@
     return card;
   }
 
+  // ── Improve CV ────────────────────────────────────────────────────────────
+  async function improveCV() {
+    const btn = document.getElementById('improve-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Improving CV…';
+    try {
+      const res = await fetch(`/api/improve-cv/${sessionId}`, { method: 'POST' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+        alert('Error: ' + (err.detail || 'Something went wrong'));
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV';
+        return;
+      }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = 'improved_cv.docx'; a.click();
+      URL.revokeObjectURL(url);
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Downloaded!';
+    } catch(e) {
+      alert('Could not improve CV: ' + e.message);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV';
+    }
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
   function esc(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   function show(section) {
-    uploadSection.style.display   = section === 'upload'   ? 'block' : 'none';
+    chatSection.style.display     = section === 'chat'     ? 'block' : 'none';
     progressSection.style.display = section === 'progress' ? 'block' : 'none';
     resultsSection.style.display  = section === 'results'  ? 'block' : 'none';
   }
@@ -699,42 +897,14 @@
       document.getElementById(`step-${i}`).classList.toggle('done', i < active || status === 'done');
   }
 
-  // ── Improve CV ────────────────────────────────────────────────────────────
-  async function improveCV() {
-    const btn = document.getElementById('improve-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Improving CV…';
-
-    try {
-      const res = await fetch(`/api/improve-cv/${sessionId}`, { method: 'POST' });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
-        alert('Error: ' + (err.detail || 'Something went wrong'));
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV';
-        return;
-      }
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = 'improved_cv.docx';
-      a.click();
-      URL.revokeObjectURL(url);
-      btn.innerHTML = '<i class="fa-solid fa-check"></i> Downloaded!';
-    } catch(e) {
-      alert('Could not improve CV: ' + e.message);
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV';
-    }
-  }
-
   function restart() {
     clearInterval(pollTimer);
-    sessionId = null; allJobs = []; visibleN = 10; profile = null; isDocx = false;
-    fileInput.value = ''; fileInput._file = null;
-    fileNameRow.classList.add('hidden');
-    uploadBtn.disabled = true;
+    sessionId = null; allJobs = []; visibleN = 10; profile = null;
+    isDocx = false; chatWaiting = false;
+    chatMessages.innerHTML = '';
+    chatFileInput.value = '';
+    disableInput();
+    chatTextInput.placeholder = 'Upload your CV to get started…';
     jobsList.innerHTML = '';
     gapList.innerHTML = '';
     profileBar.classList.add('hidden');
@@ -743,7 +913,8 @@
     const btn = document.getElementById('improve-btn');
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV';
-    show('upload');
+    show('chat');
+    addMsg('assistant', "Hi! I'm here to help you find jobs that genuinely match your background. Start by uploading your CV — use the 📎 button. PDF, Word, or text file all work.");
   }
 </script>
 </body>
