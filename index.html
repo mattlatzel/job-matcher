@@ -343,11 +343,20 @@
     .job-logo {
       width: 40px; height: 40px;
       border-radius: 8px;
-      background: #e2e8f0;
+      background: #f1f5f9;
       display: flex; align-items: center; justify-content: center;
       font-weight: 700; font-size: .95rem; color: #475569;
       flex-shrink: 0;
       border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .job-logo-img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      padding: 4px;
+    }
+    .job-logo-fallback {
+      font-weight: 700; font-size: .95rem; color: #475569;
     }
     .job-row-body { flex: 1; min-width: 0; }
     .job-row-title {
@@ -707,7 +716,7 @@
           <span id="threshold-value" style="font-size:1rem; font-weight:800; color:var(--accent-cobalt); min-width:40px; text-align:right;">70%</span>
           <div style="width:1px; height:20px; background:var(--border); flex-shrink:0;"></div>
           <label style="display:flex; align-items:center; gap:6px; cursor:pointer; white-space:nowrap; font-size:.82rem; font-weight:600; color:#0b1b2b; flex-shrink:0;">
-            <input type="checkbox" id="freshness-toggle" style="accent-color:var(--accent-cobalt); width:14px; height:14px;" />
+            <input type="checkbox" id="freshness-toggle" checked style="accent-color:var(--accent-cobalt); width:14px; height:14px;" />
             Last 30 days
           </label>
         </div>
@@ -1074,42 +1083,56 @@
 
   // ── Build job row (inbox style) ───────────────────────────────────────────
   function buildCard(job) {
-    const score = job.score;
+    const score      = job.score;
     const scoreClass = score >= 85 ? 'high' : score >= 75 ? 'mid' : 'low';
-    const initials = (job.company || '?').trim()[0].toUpperCase();
-    const meta = [job.company, job.is_remote ? 'Remote' : job.location].filter(Boolean).join(' · ');
-    const salaryHtml = job.salary ? `<span class="salary-chip" style="margin-left:8px;"><i class="fa-solid fa-sterling-sign"></i> ${esc(job.salary)}</span>` : '';
-    const postedHtml = job.posted ? `<span class="posted-date">Posted: ${job.posted}</span>` : '';
+    const initials   = (job.company || '?').trim()[0].toUpperCase();
+    const location   = job.is_remote ? 'Remote' : job.location;
+    const salaryText = job.salary ? ` · ${job.salary}` : '';
+    const postedText = job.posted ? ` · ${job.posted}` : '';
     const remoteBadge = job.is_remote ? '<span class="badge" style="margin-left:6px;">Remote</span>' : '';
+
+    // Company logo via Clearbit, fallback to initial
+    let logoHtml;
+    try {
+      const domain = new URL(job.apply_link).hostname.replace(/^www\./, '');
+      logoHtml = `<img src="https://logo.clearbit.com/${domain}" class="job-logo-img"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+        <span class="job-logo-fallback" style="display:none;">${initials}</span>`;
+    } catch {
+      logoHtml = `<span class="job-logo-fallback">${initials}</span>`;
+    }
 
     const seniorityChip = `<span class="chip ${job.seniority_match ? 'chip-match' : 'chip-miss'}">${job.seniority_match ? '✓' : '⚠'} Seniority</span>`;
     const domainChip    = `<span class="chip ${job.domain_match ? 'chip-match' : 'chip-miss'}">${job.domain_match ? '✓' : '⚠'} Domain</span>`;
     const strengthChips = (job.strengths || []).map(s => `<span class="chip chip-strength">+ ${esc(s)}</span>`).join('');
     const gapChips      = (job.gaps || []).map(g => `<span class="chip chip-gap">⚠ ${esc(g)}</span>`).join('');
 
+    // Short description (truncate at word boundary)
+    const desc = job.description ? job.description.replace(/\s+/g, ' ').slice(0, 240) + (job.description.length > 240 ? '…' : '') : '';
+
     const wrapper = document.createElement('div');
     wrapper.innerHTML = `
       <div class="job-row" onclick="this.nextElementSibling.classList.toggle('open')">
-        <div class="job-logo">${initials}</div>
+        <div class="job-logo">${logoHtml}</div>
         <div class="job-row-body">
           <div class="job-row-title">${esc(job.title)}</div>
-          <div class="job-row-meta">${esc(meta)}</div>
+          <div class="job-row-meta">${esc(job.company)} · ${esc(location)}${esc(salaryText)}${esc(postedText)}</div>
         </div>
         <div class="job-row-score ${scoreClass}">${score}%</div>
         <a class="job-row-btn" href="${esc(job.apply_link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
-          Review job →
+          Apply Now →
         </a>
       </div>
       <div class="job-detail">
-        <div class="job-detail-reason">${esc(job.reason)}</div>
+        ${desc ? `<div class="job-detail-reason" style="color:var(--muted); font-style:italic;">${esc(desc)}</div>` : ''}
         <div class="job-detail-chips">
           ${seniorityChip}${domainChip}${strengthChips}${gapChips}
         </div>
         <div class="job-detail-footer">
           <a class="apply-btn" href="${esc(job.apply_link)}" target="_blank" rel="noopener">
-            Apply <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            Apply Now <i class="fa-solid fa-arrow-up-right-from-square"></i>
           </a>
-          ${salaryHtml}${remoteBadge}${postedHtml}
+          ${remoteBadge}
         </div>
       </div>`;
     return wrapper;

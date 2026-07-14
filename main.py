@@ -427,6 +427,7 @@ JSON only. No prose."""
             "reason":          s.get("reason", ""),
             "posted":          (job.get("job_posted_at_datetime_utc") or "")[:10],
             "salary":          salary,
+            "description":     (job.get("job_description") or "")[:280].strip(),
         })
     return results
 
