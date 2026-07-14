@@ -141,15 +141,15 @@ async def _fetch_query_standalone(query: str, pages: int = 2) -> list[dict]:
 async def fetch_jobs(profile: dict) -> list[dict]:
     title           = profile.get("current_title", "professional")
     domain          = profile.get("job_search_query") or title
-    adjacent_titles = profile.get("adjacent_titles", [])[:2]  # max 2 adjacent
+    adjacent_titles = profile.get("adjacent_titles", [])[:4]  # up to 4 adjacent
 
     # Build all queries
     queries = [
-        (f"{domain} in London",  4),   # specific + domain, most pages
-        (f"{title} in London",   2),   # title only, fewer pages
+        (f"{domain} in London",  6),   # specific + domain, most pages
+        (f"{title} in London",   4),   # title only
     ]
     for adj in adjacent_titles:
-        queries.append((f"{adj} in London", 2))
+        queries.append((f"{adj} in London", 3))
 
     print(f"  Queries: {[q for q, _ in queries]}")
 
@@ -211,8 +211,10 @@ JOBS:
 {titles_block}
 
 Return a JSON array of "yes" or "no" for each job (in order).
-"yes" = plausibly relevant based on title/seniority alone.
-"no"  = clearly wrong level, wrong field, or irrelevant.
+"yes" = could plausibly be relevant — when in doubt, say yes.
+"no"  = only if clearly wrong field or wildly wrong level (e.g. junior dev for a senior PM).
+
+Be generous. It is better to include a borderline job than to miss a good match.
 
 JSON array only. Example: ["yes","no","yes"]"""
             }]
