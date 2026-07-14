@@ -33,7 +33,10 @@
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
-      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
       line-height: 1.6;
     }
 
@@ -64,30 +67,18 @@
     }
     header p  { font-size: .85rem; color: #94a3b8; font-weight: 500; }
 
-    main { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+    main { flex: 1; overflow: hidden; padding: 0; }
 
     /* ── Chat section ── */
-    #chat-section { }
-    .chat-header { text-align: center; margin-bottom: 32px; }
-    .chat-header h2 {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 2rem;
-      font-weight: 800;
-      margin-bottom: 8px;
-      color: #0b1b2b;
-    }
-    .chat-header p  { color: var(--muted); font-size: 1rem; }
+    #chat-section { display: flex; flex-direction: column; height: 100%; }
 
     .chat-window {
       background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
       display: flex;
       flex-direction: column;
-      height: 520px;
+      flex: 1;
       overflow: hidden;
-      border-top: 3px solid var(--accent-cobalt);
+      border-top: none;
     }
 
     .chat-messages {
@@ -162,9 +153,10 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 16px 20px;
+      padding: 14px 24px;
       border-top: 1px solid var(--border);
       background: #ffffff;
+      flex-shrink: 0;
     }
     .chat-attach-label {
       color: var(--muted);
@@ -234,7 +226,6 @@
     .btn:disabled { background: #e2e8f0; color: var(--muted); cursor: not-allowed; }
 
     /* ── Progress ── */
-    #progress-section { display: none; }
     .progress-card {
       background: var(--surface);
       border-radius: var(--radius);
@@ -291,106 +282,148 @@
     .step.active .step-label { color: var(--accent-cobalt); font-weight: 700; }
     .step.done .step-label   { color: var(--green); font-weight: 600; }
 
-    /* ── Results ── */
-    #results-section { display: none; }
-    .results-header { margin-bottom: 32px; }
-    .results-header h2 {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: #0b1b2b;
-    }
-    .results-header p  { color: var(--muted); font-size: .95rem; margin-top: 6px; }
-
-    .job-card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 28px;
-      margin-bottom: 20px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-      border-left: 4.5px solid var(--border);
-      display: flex; gap: 24px;
-      transition: all .2s;
-    }
-    .job-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-color: #cbd5e1; }
-    .job-card.high-match { border-left-color: var(--green); }
-    .job-card.mid-match { border-left-color: var(--yellow); }
-    .job-card.low-match { border-left-color: var(--muted); }
-
-    .score-badge {
+    /* ── Right panel inbox ── */
+    .inbox-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: #ffffff;
       flex-shrink: 0;
-      width: 72px; height: 72px;
-      border-radius: var(--radius);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      font-weight: 700;
-      border: 1px solid transparent;
     }
-    .score-badge .pct  { font-size: 1.5rem; line-height: 1; }
-    .score-badge .pct-label { font-size: .65rem; text-transform: uppercase; letter-spacing: .05em; opacity: .8; margin-top: 2px; }
-
-    .score-90 { background: #f0fdfa; color: var(--green); border-color: #ccfbf1; }
-    .score-85 { background: #f0fdfa; color: var(--green); border-color: #ccfbf1; }
-    .score-80 { background: #fffbeb; color: var(--yellow); border-color: #fef3c7; }
-
-    .job-body { flex: 1; min-width: 0; }
-    .job-title {
+    .inbox-title {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 1.25rem;
+      font-size: 1.1rem;
       font-weight: 700;
-      margin-bottom: 6px;
       color: #0b1b2b;
+      display: flex; align-items: center; gap: 8px;
     }
-    .job-meta  { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
-    .job-meta span {
-      font-size: .85rem; color: var(--muted);
-      display: inline-flex; align-items: center; gap: 6px;
-      font-weight: 500;
+    .inbox-count {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: .75rem;
+      font-weight: 600;
+      background: var(--accent-cobalt);
+      color: white;
+      border-radius: 999px;
+      padding: 1px 8px;
     }
-    .job-meta span i { color: #94a3b8; }
-    .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: var(--radius);
-      font-size: .75rem; font-weight: 600;
-      background: #eff6ff; color: var(--accent-cobalt);
+    .inbox-threshold {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .82rem; color: var(--muted); font-weight: 600;
+    }
+    .inbox-threshold input[type=range] { width: 90px; }
+
+    /* ── Results ── */
+    #results-section { display: flex; flex-direction: column; height: 100%; }
+    .inbox-scroll { flex: 1; overflow-y: auto; }
+
+    /* ── Job rows (inbox style) ── */
+    .job-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      background: #ffffff;
+      transition: background .12s;
+      cursor: default;
+    }
+    .job-row:hover { background: #f8fafc; }
+    .job-logo {
+      width: 40px; height: 40px;
+      border-radius: 8px;
+      background: #e2e8f0;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: .95rem; color: #475569;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .job-row-body { flex: 1; min-width: 0; }
+    .job-row-title {
+      font-size: .93rem;
+      font-weight: 700;
+      color: #0b1b2b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+    .job-row-meta {
+      font-size: .8rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .job-row-score {
+      font-size: .8rem;
+      font-weight: 700;
+      min-width: 36px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .job-row-score.high { color: var(--green); }
+    .job-row-score.mid  { color: var(--yellow); }
+    .job-row-score.low  { color: var(--muted); }
+    .job-row-btn {
+      text-decoration: none;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--accent-cobalt);
+      white-space: nowrap;
+      flex-shrink: 0;
+      padding: 6px 12px;
       border: 1px solid #dbeafe;
+      border-radius: var(--radius);
+      background: #eff6ff;
+      transition: background .12s;
     }
-    .reason { font-size: .92rem; color: #334155; line-height: 1.6; margin-bottom: 18px; }
-    .job-footer { display: flex; align-items: center; gap: 16px; border-top: 1px solid #f1f5f9; padding-top: 16px; }
+    .job-row-btn:hover { background: #dbeafe; }
+
+    /* Expandable job detail drawer */
+    .job-detail {
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px 16px 80px;
+      display: none;
+    }
+    .job-detail.open { display: block; }
+    .job-detail-reason { font-size: .88rem; color: #334155; line-height: 1.6; margin-bottom: 12px; }
+    .job-detail-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .job-detail-footer { display: flex; align-items: center; gap: 12px; }
+    .posted-date { font-size: .78rem; color: var(--muted); }
     .apply-btn {
       text-decoration: none;
-      padding: 8px 20px;
+      padding: 6px 16px;
       border-radius: var(--radius);
       background: var(--accent-cobalt);
       color: white;
-      font-size: .88rem; font-weight: 600;
+      font-size: .83rem; font-weight: 600;
       display: inline-flex; align-items: center; gap: 6px;
       transition: background .15s;
     }
     .apply-btn:hover { background: #004494; }
-    .posted-date { font-size: .8rem; color: var(--muted); font-weight: 500; }
+    .salary-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: .78rem; font-weight: 600;
+      color: var(--green); background: #f0fdfa;
+      border-radius: var(--radius); padding: 2px 8px;
+      border: 1px solid #ccfbf1;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: var(--radius);
+      font-size: .73rem; font-weight: 600;
+      background: #eff6ff; color: var(--accent-cobalt);
+      border: 1px solid #dbeafe;
+    }
 
     /* ── Slider ── */
-    .slider-wrap {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px 24px;
-      margin-bottom: 24px;
-      display: flex; align-items: center; gap: 16px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-    }
-    .slider-label { font-size: .88rem; font-weight: 600; color: #0b1b2b; text-transform: uppercase; letter-spacing: 0.05em; }
-    .slider-value {
-      font-size: 1rem; font-weight: 700; color: var(--accent-cobalt);
-      min-width: 48px; text-align: right;
-    }
     input[type=range] {
-      flex: 1; accent-color: var(--accent-cobalt); cursor: pointer; height: 6px; background: #e2e8f0; border-radius: 3px;
+      accent-color: var(--accent-cobalt); cursor: pointer; height: 4px; background: #e2e8f0; border-radius: 3px;
     }
-    .slider-count { font-size: .9rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
 
     /* ── Match breakdown ── */
     .breakdown {
@@ -432,34 +465,11 @@
       border: 1px solid #ccfbf1;
     }
 
-    /* ── Load more / no results ── */
-    #load-more-wrap { text-align: center; margin-top: 16px; }
-    #no-results {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 56px 40px;
-      text-align: center;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-    }
-    #no-results .icon { font-size: 3rem; margin-bottom: 16px; }
-    #no-results h3 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; color: #0b1b2b; }
-    #no-results p  { color: var(--muted); font-size: .95rem; }
+    /* ── Load more ── */
+    #load-more-wrap { text-align: center; }
 
-    /* ── Profile chip ── */
-    #profile-bar {
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent-cobalt);
-      border-radius: var(--radius);
-      padding: 14px 20px;
-      margin-bottom: 24px;
-      font-size: .9rem;
-      display: flex; align-items: center; gap: 12px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-    }
-    #profile-bar i { color: var(--accent-cobalt); font-size: 1.05rem; }
-    .profile-text { color: #0b1b2b; font-weight: 600; }
+    /* ── Profile bar ── */
+    #profile-bar { display: flex; align-items: center; gap: 8px; }
 
     /* ── Gap analysis tile ── */
     #gap-tile {
@@ -498,68 +508,68 @@
       border: 1px solid #dbeafe;
     }
 
-    /* ── Reset link ── */
-    #restart-link {
-      display: block; text-align: center;
-      margin-top: 40px;
-      color: var(--muted); font-size: .9rem; cursor: pointer;
-      font-weight: 600;
-      transition: color .15s;
-    }
     #restart-link:hover { color: var(--accent-cobalt); }
 
-    /* ── Layout Overhaul ── */
+    /* ── Full-height split layout ── */
     .app-container {
       display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 28px;
-      align-items: start;
+      grid-template-columns: 480px 1fr;
+      height: 100%;
+      gap: 0;
     }
     .left-panel {
-      position: sticky;
-      top: 24px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      border-right: 1px solid var(--border);
+      background: #ffffff;
     }
     .right-panel {
-      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
     }
     .chat-header-alt {
-      margin-bottom: 20px;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
     .chat-header-alt h2 {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: #0b1b2b;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
     .chat-header-alt p {
       color: var(--muted);
-      font-size: .88rem;
-      line-height: 1.4;
+      font-size: .82rem;
+    }
+    .chat-hint {
+      padding: 10px 24px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      background: #fff;
     }
 
     @media (max-width: 900px) {
-      .app-container {
-        grid-template-columns: 1fr;
-      }
-      .left-panel {
-        position: static;
-      }
+      .app-container { grid-template-columns: 1fr; }
+      .left-panel { height: 50%; border-right: none; border-bottom: 1px solid var(--border); }
+      .right-panel { height: 50%; }
     }
 
     .placeholder-card {
-      background: var(--surface);
-      border: 1px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 64px 32px;
+      background: var(--bg);
       text-align: center;
-      box-shadow: var(--shadow);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 16px;
-      min-height: 620px;
+      height: 100%;
+      padding: 48px;
     }
     .placeholder-icon-wrap {
       width: 60px; height: 60px;
@@ -603,7 +613,7 @@
       <section id="chat-section">
         <div class="chat-header-alt">
           <h2>Advisory Portal</h2>
-          <p>Provide your details to initiate matching</p>
+          <p>Upload your CV to start matching</p>
         </div>
 
         <div class="chat-window">
@@ -631,55 +641,62 @@
 
     <!-- Right Panel: Dashboard -->
     <div class="right-panel">
+
       <!-- Initial Placeholder State -->
       <div id="initial-state-card" class="placeholder-card">
         <div class="placeholder-icon-wrap">
           <i class="fa-solid fa-file-invoice"></i>
         </div>
-        <h3>Strategic Profile Awaiting Activation</h3>
-        <p>Please upload your CV in the Advisory Portal on the left to begin the matching and analysis sequence.</p>
+        <h3>Your matches will appear here</h3>
+        <p>Upload your CV in the chat on the left to start the matching process.</p>
       </div>
 
       <!-- ── Progress ── -->
-      <section id="progress-section" class="hidden">
+      <section id="progress-section" class="hidden" style="padding: 48px 24px;">
         <div class="progress-card">
           <div class="spinner"></div>
           <div class="progress-title" id="progress-title">Starting…</div>
           <div class="progress-sub" id="progress-sub">This takes about 30–60 seconds</div>
-
           <div class="steps" style="margin-top: 32px;">
-            <div class="step" id="step-1">
-              <div class="step-dot">1</div>
-              <div class="step-label">Reading CV</div>
-            </div>
-            <div class="step" id="step-2">
-              <div class="step-dot">2</div>
-              <div class="step-label">Finding Jobs</div>
-            </div>
-            <div class="step" id="step-3">
-              <div class="step-dot">3</div>
-              <div class="step-label">AI Scoring</div>
-            </div>
+            <div class="step" id="step-1"><div class="step-dot">1</div><div class="step-label">Reading CV</div></div>
+            <div class="step" id="step-2"><div class="step-dot">2</div><div class="step-label">Finding Jobs</div></div>
+            <div class="step" id="step-3"><div class="step-dot">3</div><div class="step-label">AI Scoring</div></div>
           </div>
         </div>
       </section>
 
       <!-- ── Results ── -->
       <section id="results-section" class="hidden">
-        <div class="results-header">
-          <h2>Your best matches</h2>
-          <p id="results-summary"></p>
+
+        <!-- Inbox header with threshold slider -->
+        <div class="inbox-header">
+          <div class="inbox-title">
+            Inbox
+            <span class="inbox-count" id="threshold-count">0</span>
+          </div>
+          <div class="inbox-threshold">
+            <span>Min match</span>
+            <input type="range" id="threshold-slider" min="50" max="95" value="70" step="5" />
+            <span id="threshold-value" style="color:var(--accent-cobalt); font-weight:700;">70%</span>
+          </div>
         </div>
 
-        <div id="gap-tile" class="hidden">
-          <h3 onclick="toggleGapTile()" style="cursor:pointer; user-select:none; justify-content:space-between;">
+        <!-- Profile bar -->
+        <div id="profile-bar" class="hidden" style="padding:10px 24px; font-size:.82rem; border-bottom:1px solid var(--border); background:#fff;">
+          <i class="fa-solid fa-user-tie" style="color:var(--accent-cobalt);"></i>
+          <span class="profile-text" id="profile-text" style="margin-left:8px; font-weight:600; color:#0b1b2b;"></span>
+        </div>
+
+        <!-- Gap tile (collapsed) -->
+        <div id="gap-tile" class="hidden" style="border-radius:0; border-left-width:3px; margin-bottom:0; border-left:3px solid var(--red); background:#fff9f9; border-bottom:1px solid #fee2e2; padding:12px 24px;">
+          <h3 onclick="toggleGapTile()" style="cursor:pointer; user-select:none; justify-content:space-between; font-size:1rem;">
             <span><i class="fa-solid fa-triangle-exclamation"></i> CV Gap Analysis</span>
-            <i class="fa-solid fa-chevron-down" id="gap-chevron" style="font-size:.9rem; color:var(--red); transition:transform .2s;"></i>
+            <i class="fa-solid fa-chevron-down" id="gap-chevron" style="font-size:.85rem; color:var(--red); transition:transform .2s;"></i>
           </h3>
-          <div id="gap-body" class="hidden">
+          <div id="gap-body" class="hidden" style="margin-top:12px;">
             <div class="gap-sub">Based on recurring requirements across your matched London jobs</div>
             <div id="gap-list"></div>
-            <div class="improve-btn-wrap hidden" id="improve-btn-wrap">
+            <div class="improve-btn-wrap hidden" id="improve-btn-wrap" style="margin-top:14px;">
               <button class="btn-improve" id="improve-btn" onclick="improveCV()">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV
               </button>
@@ -687,36 +704,28 @@
           </div>
         </div>
 
-        <div class="slider-wrap">
-          <span class="slider-label">Min match</span>
-          <input type="range" id="threshold-slider" min="50" max="95" value="70" step="5" />
-          <span class="slider-value" id="threshold-value">70%</span>
-          <span class="slider-count" id="threshold-count"></span>
-        </div>
+        <!-- Scrollable job list -->
+        <div class="inbox-scroll">
+          <div id="jobs-list"></div>
 
-        <div id="profile-bar" class="hidden">
-          <i class="fa-solid fa-user-tie"></i>
-          <span class="profile-text" id="profile-text"></span>
-        </div>
+          <div id="no-results" class="hidden" style="padding:56px 24px; text-align:center;">
+            <div style="font-size:2.5rem; margin-bottom:12px;">😕</div>
+            <div style="font-weight:700; color:#0b1b2b; margin-bottom:6px;">No strong matches found</div>
+            <div style="color:var(--muted); font-size:.9rem;">Try lowering the threshold slider above.</div>
+          </div>
 
-        <div id="jobs-list"></div>
+          <div id="load-more-wrap" class="hidden" style="padding:16px 24px; text-align:center;">
+            <button class="btn btn-outline" id="load-more-btn" style="font-size:.85rem;">
+              <i class="fa-solid fa-chevron-down"></i> Load 10 more
+            </button>
+          </div>
 
-        <div id="no-results" class="hidden">
-          <div class="icon">😕</div>
-          <h3>No strong matches found right now</h3>
-          <p>We couldn't find jobs matching your threshold. Try lowering the slider or check back in a few days.</p>
-        </div>
-
-        <div id="load-more-wrap" class="hidden">
-          <button class="btn btn-outline" id="load-more-btn">
-            <i class="fa-solid fa-chevron-down"></i> Load 10 more
-          </button>
-        </div>
-
-        <div id="restart-link" onclick="restart()">
-          <i class="fa-solid fa-rotate-left"></i> Start over with a different CV
+          <div id="restart-link" onclick="restart()" style="padding:20px; text-align:center; font-size:.85rem; color:var(--muted); cursor:pointer; font-weight:600;">
+            <i class="fa-solid fa-rotate-left"></i> Start over with a different CV
+          </div>
         </div>
       </section>
+
     </div>
   </div>
 </main>
@@ -743,7 +752,6 @@
   const progressTitle   = document.getElementById('progress-title');
   const progressSub     = document.getElementById('progress-sub');
   const jobsList        = document.getElementById('jobs-list');
-  const resultsSummary  = document.getElementById('results-summary');
   const noResults       = document.getElementById('no-results');
   const loadMoreWrap    = document.getElementById('load-more-wrap');
   const loadMoreBtn     = document.getElementById('load-more-btn');
@@ -907,7 +915,7 @@
     setStep(STATUS_STEP[data.status] || 1, data.status);
     if (data.profile && !profile) profile = data.profile;
     if (data.status === 'done')  { clearInterval(pollTimer); await loadResults(); }
-    if (data.status === 'error') { clearInterval(pollTimer); alert('Error: ' + (data.error || 'Unknown')); show('chat'); }
+    if (data.status === 'error') { clearInterval(pollTimer); alert('Error: ' + (data.error || 'Unknown')); show('initial'); }
   }
 
   // ── Load results ──────────────────────────────────────────────────────────
@@ -949,10 +957,9 @@
   function renderJobs() {
     const threshold = parseInt(slider.value);
     const filtered  = allJobs.filter(j => j.score >= threshold);
-    sliderCount.textContent = `${filtered.length} job${filtered.length !== 1 ? 's' : ''}`;
+    sliderCount.textContent = filtered.length;
 
     if (filtered.length === 0) {
-      resultsSummary.textContent = `No jobs match ${threshold}%+ — try lowering the slider`;
       noResults.classList.remove('hidden');
       jobsList.innerHTML = '';
       loadMoreWrap.classList.add('hidden');
@@ -960,8 +967,6 @@
     }
 
     noResults.classList.add('hidden');
-    resultsSummary.textContent = `${filtered.length} job${filtered.length !== 1 ? 's' : ''} match ${threshold}%+ — sorted best first`;
-
     const showing = filtered.slice(0, visibleN);
     jobsList.innerHTML = '';
     showing.forEach(job => jobsList.appendChild(buildCard(job)));
@@ -971,60 +976,47 @@
 
   loadMoreBtn.addEventListener('click', () => { visibleN += 10; renderJobs(); });
 
-  // ── Build job card ────────────────────────────────────────────────────────
+  // ── Build job row (inbox style) ───────────────────────────────────────────
   function buildCard(job) {
     const score = job.score;
-    const scoreClass = score >= 90 ? 'score-90' : score >= 80 ? 'score-85' : 'score-80';
-
-    const locationHtml = job.is_remote
-      ? '<i class="fa-solid fa-wifi"></i> Remote'
-      : `<i class="fa-solid fa-location-dot"></i> ${esc(job.location)}`;
-
-    const salaryHtml = job.salary
-      ? `<span class="salary-chip"><i class="fa-solid fa-sterling-sign"></i> ${esc(job.salary)}</span>`
-      : '';
-
-    const postedHtml    = job.posted ? `<span class="posted-date">Posted: ${job.posted}</span>` : '';
-    const remoteBadge   = job.is_remote ? '<span class="badge">Remote</span>' : '';
+    const scoreClass = score >= 85 ? 'high' : score >= 75 ? 'mid' : 'low';
+    const initials = (job.company || '?').trim()[0].toUpperCase();
+    const meta = [job.company, job.is_remote ? 'Remote' : job.location].filter(Boolean).join(' · ');
+    const salaryHtml = job.salary ? `<span class="salary-chip" style="margin-left:8px;"><i class="fa-solid fa-sterling-sign"></i> ${esc(job.salary)}</span>` : '';
+    const postedHtml = job.posted ? `<span class="posted-date">Posted: ${job.posted}</span>` : '';
+    const remoteBadge = job.is_remote ? '<span class="badge" style="margin-left:6px;">Remote</span>' : '';
 
     const seniorityChip = `<span class="chip ${job.seniority_match ? 'chip-match' : 'chip-miss'}">${job.seniority_match ? '✓' : '⚠'} Seniority</span>`;
     const domainChip    = `<span class="chip ${job.domain_match ? 'chip-match' : 'chip-miss'}">${job.domain_match ? '✓' : '⚠'} Domain</span>`;
     const strengthChips = (job.strengths || []).map(s => `<span class="chip chip-strength">+ ${esc(s)}</span>`).join('');
     const gapChips      = (job.gaps || []).map(g => `<span class="chip chip-gap">⚠ ${esc(g)}</span>`).join('');
 
-    const breakdownHtml = `
-      <div class="breakdown">
-        <div class="breakdown-row"><span class="breakdown-label">Fit</span>${seniorityChip}${domainChip}</div>
-        ${strengthChips ? `<div class="breakdown-row"><span class="breakdown-label">Strong</span>${strengthChips}</div>` : ''}
-        ${gapChips      ? `<div class="breakdown-row"><span class="breakdown-label">Gaps</span>${gapChips}</div>` : ''}
-      </div>`;
-
-    const matchClass = score >= 90 ? 'high-match' : score >= 80 ? 'mid-match' : 'low-match';
-    const card = document.createElement('div');
-    card.className = `job-card ${matchClass}`;
-    card.innerHTML = `
-      <div class="score-badge ${scoreClass}">
-        <span class="pct">${score}%</span>
-        <span class="pct-label">match</span>
-      </div>
-      <div class="job-body">
-        <div class="job-title">${esc(job.title)}</div>
-        <div class="job-meta">
-          <span><i class="fa-solid fa-building"></i> ${esc(job.company)}</span>
-          <span>${locationHtml}</span>
-          ${remoteBadge}
-          ${salaryHtml}
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `
+      <div class="job-row" onclick="this.nextElementSibling.classList.toggle('open')">
+        <div class="job-logo">${initials}</div>
+        <div class="job-row-body">
+          <div class="job-row-title">${esc(job.title)}</div>
+          <div class="job-row-meta">${esc(meta)}</div>
         </div>
-        ${breakdownHtml}
-        <div class="reason">${esc(job.reason)}</div>
-        <div class="job-footer">
+        <div class="job-row-score ${scoreClass}">${score}%</div>
+        <a class="job-row-btn" href="${esc(job.apply_link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+          Review job →
+        </a>
+      </div>
+      <div class="job-detail">
+        <div class="job-detail-reason">${esc(job.reason)}</div>
+        <div class="job-detail-chips">
+          ${seniorityChip}${domainChip}${strengthChips}${gapChips}
+        </div>
+        <div class="job-detail-footer">
           <a class="apply-btn" href="${esc(job.apply_link)}" target="_blank" rel="noopener">
             Apply <i class="fa-solid fa-arrow-up-right-from-square"></i>
           </a>
-          ${postedHtml}
+          ${salaryHtml}${remoteBadge}${postedHtml}
         </div>
       </div>`;
-    return card;
+    return wrapper;
   }
 
   // ── Gap tile toggle ───────────────────────────────────────────────────────
