@@ -69,6 +69,24 @@
 
     main { flex: 1; overflow: hidden; padding: 0; }
 
+    /* ── Chelsea avatar ── */
+    .chelsea-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: top;
+      flex-shrink: 0;
+      border: 2px solid var(--border);
+    }
+    .msg-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .msg-row.assistant { align-self: flex-start; max-width: 88%; }
+    .msg-row.user      { align-self: flex-end; flex-direction: row-reverse; max-width: 82%; }
+    .msg-row .msg      { max-width: 100%; }
+
     /* ── Chat section ── */
     #chat-section { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
@@ -103,9 +121,6 @@
       background: #f8fafc;
       color: var(--text);
       align-self: flex-start;
-      border-left: 3.5px solid var(--accent-cobalt);
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
       box-shadow: 0 1px 2px rgba(0,0,0,0.01);
     }
     .msg.user {
@@ -614,9 +629,12 @@
     <div class="left-panel">
       <!-- ── Chat ── -->
       <section id="chat-section">
-        <div class="chat-header-alt">
-          <h2>Chelsea</h2>
-          <p>Your personal job advisor — sharp, warm, and relentlessly on your side</p>
+        <div class="chat-header-alt" style="display:flex; align-items:center; gap:14px;">
+          <img src="/static/Chelsea.jpg" alt="Chelsea" style="width:48px; height:48px; border-radius:50%; object-fit:cover; object-position:top; border:2px solid var(--border); flex-shrink:0;" />
+          <div>
+            <h2>Chelsea</h2>
+            <p>Your personal job advisor, sharp, warm, and relentlessly on your side</p>
+          </div>
         </div>
 
         <div class="chat-window">
@@ -895,10 +913,18 @@
 
   // ── Chat helpers ──────────────────────────────────────────────────────────
   function addMsg(role, text) {
-    const div = document.createElement('div');
-    div.className = role === 'file' ? 'msg file-msg' : `msg ${role}`;
-    div.textContent = text;
-    chatMessages.appendChild(div);
+    if (role === 'assistant') {
+      const row = document.createElement('div');
+      row.className = 'msg-row assistant';
+      row.innerHTML = `<img src="/static/Chelsea.jpg" class="chelsea-avatar" alt="Chelsea" /><div class="msg assistant"></div>`;
+      row.querySelector('.msg').textContent = text;
+      chatMessages.appendChild(row);
+    } else {
+      const div = document.createElement('div');
+      div.className = role === 'file' ? 'msg file-msg' : `msg ${role}`;
+      div.textContent = text;
+      chatMessages.appendChild(div);
+    }
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
