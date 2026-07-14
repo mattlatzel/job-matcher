@@ -166,7 +166,7 @@
     /* Input row */
     .chat-input-row {
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       gap: 12px;
       padding: 14px 24px;
       border-top: 1px solid var(--border);
@@ -188,14 +188,17 @@
     .chat-text-input {
       flex: 1;
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: 20px;
       padding: 10px 16px;
       font-size: .95rem;
       font-family: inherit;
       outline: none;
       transition: border-color .15s, box-shadow .15s;
       resize: none;
-      line-height: 1.4;
+      line-height: 1.5;
+      min-height: 42px;
+      max-height: 140px;
+      overflow-y: auto;
     }
     .chat-text-input:focus { border-color: var(--accent-cobalt); box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.1); }
     .chat-text-input:disabled { background: #f8fafc; color: var(--muted); }
@@ -653,13 +656,13 @@
               <i class="fa-solid fa-paperclip"></i>
               <input type="file" id="chat-file-input" accept=".pdf,.docx,.txt" />
             </label>
-            <input
-              type="text"
+            <textarea
               class="chat-text-input"
               id="chat-text"
               placeholder="Upload your CV to get started…"
+              rows="1"
               disabled
-            />
+            ></textarea>
             <button class="chat-send-btn" id="chat-send-btn" disabled>
               <i class="fa-solid fa-paper-plane"></i>
             </button>
@@ -882,6 +885,12 @@
   chatTextInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
+
+  // Auto-resize textarea as user types
+  chatTextInput.addEventListener('input', () => {
+    chatTextInput.style.height = 'auto';
+    chatTextInput.style.height = Math.min(chatTextInput.scrollHeight, 140) + 'px';
+  });
   chatSendBtn.addEventListener('click', sendMessage);
 
   async function sendMessage() {
@@ -890,6 +899,7 @@
 
     addMsg('user', text);
     chatTextInput.value = '';
+    chatTextInput.style.height = 'auto';
     disableInput();
     setChatWaiting(true);
 
