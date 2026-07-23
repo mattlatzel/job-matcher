@@ -209,11 +209,12 @@ async def _fetch_guardian(keywords: str, page_size: int = 50) -> list[dict]:
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.get(
-                "https://content.guardianapis.com/jobs",
+                "https://content.guardianapis.com/search",
                 params={
-                    "api-key":   GUARDIAN_API_KEY,
-                    "q":         keywords,
-                    "page-size": page_size,
+                    "api-key":     GUARDIAN_API_KEY,
+                    "q":           keywords,
+                    "section":     "jobs",
+                    "page-size":   page_size,
                     "show-fields": "headline,salary,locationDescription,employer,body,closingDate",
                 },
             )
