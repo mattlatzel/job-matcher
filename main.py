@@ -40,6 +40,7 @@ ANTHROPIC_API_KEY  = os.getenv("ANTHROPIC_API_KEY")
 JSEARCH_API_KEY    = os.getenv("JSEARCH_API_KEY")
 ADZUNA_APP_ID      = os.getenv("ADZUNA_APP_ID")
 ADZUNA_APP_KEY     = os.getenv("ADZUNA_APP_KEY")
+APIFY_API_KEY      = os.getenv("APIFY_API_KEY")
 
 SONNET = "claude-sonnet-5"   # profile extraction — needs quality reasoning
 HAIKU  = "claude-haiku-4-5-20251001"   # job scoring — runs ~20+ times, needs speed
@@ -197,6 +198,79 @@ async def _fetch_adzuna(keywords: str, location: str = "London", results_per_pag
         return []
 
 
+async def _fetch_linkedin(search_queries: list[str], max_results: int = 40) -> list[dict]:
+    """Fetch LinkedIn jobs via Apify curious_coder/linkedin-jobs-scraper."""
+    if not APIFY_API_KEY:
+        return []
+    # Build LinkedIn search URLs — public job search (no login required)
+    urls = []
+    for q in search_queries[:4]:  # cap at 4 queries to control cost
+        encoded = q.replace(" ", "%20")
+        urls.append(f"https://www.linkedin.com/jobs/search/?keywords={encoded}&location=London%2C%20United%20Kingdom&f_TPR=r2592000")
+
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            # Start the actor run
+            run_resp = await client.post(
+                "https://api.apify.com/v2/acts/curious_coder~linkedin-jobs-scraper/runs",
+                headers={"Authorization": f"Bearer {APIFY_API_KEY}"},
+                json={
+                    "startUrls": urls,
+                    "count": max_results,
+                    "scrapeCompanyDetails": False,
+                },
+            )
+            run_resp.raise_for_status()
+            run_id = run_resp.json()["data"]["id"]
+            print(f"  LinkedIn Apify run started: {run_id}")
+
+            # Poll until finished (max 90s)
+            for _ in range(18):
+                await asyncio.sleep(5)
+                status_resp = await client.get(
+                    f"https://api.apify.com/v2/acts/curious_coder~linkedin-jobs-scraper/runs/{run_id}",
+                    headers={"Authorization": f"Bearer {APIFY_API_KEY}"},
+                )
+                status = status_resp.json()["data"]["status"]
+                if status in ("SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"):
+                    break
+
+            if status != "SUCCEEDED":
+                print(f"  LinkedIn Apify run ended with status: {status}")
+                return []
+
+            # Fetch results
+            items_resp = await client.get(
+                f"https://api.apify.com/v2/acts/curious_coder~linkedin-jobs-scraper/runs/{run_id}/dataset/items",
+                headers={"Authorization": f"Bearer {APIFY_API_KEY}"},
+                params={"limit": max_results},
+            )
+            items = items_resp.json()
+            print(f"  LinkedIn Apify returned {len(items)} jobs")
+
+            # Normalise to our internal job schema
+            results = []
+            for item in items:
+                salary_text = item.get("salary") or ""
+                results.append({
+                    "job_id":          f"li_{item.get('id') or item.get('jobId', '')}",
+                    "job_title":       item.get("title", ""),
+                    "employer_name":   item.get("companyName", ""),
+                    "job_city":        item.get("location", "London"),
+                    "job_country":     "United Kingdom",
+                    "job_is_remote":   "remote" in (item.get("location") or "").lower(),
+                    "job_description": item.get("description") or item.get("descriptionText") or "",
+                    "job_apply_link":  item.get("applyUrl") or item.get("url") or "#",
+                    "job_posted_at_datetime_utc": item.get("postedAt") or "",
+                    "_salary_display": salary_text or None,
+                })
+            return results
+
+    except Exception as e:
+        print(f"  LinkedIn Apify error: {e}")
+        return []
+
+
 async def fetch_jobs(profile: dict) -> list[dict]:
     title           = profile.get("current_title", "professional")
     domain          = profile.get("job_search_query") or title
@@ -218,14 +292,18 @@ async def fetch_jobs(profile: dict) -> list[dict]:
     # Adzuna keywords — main + adjacent titles + sectors
     adzuna_keywords = [domain, title] + adjacent_titles[:4] + [f"{title} {s}" for s in target_sectors[:2]]
 
+    # LinkedIn queries — main title + top adjacent titles
+    linkedin_queries = [f"{title} London"] + [f"{adj} London" for adj in adjacent_titles[:3]]
+
     async with httpx.AsyncClient(timeout=45) as client:
         jsearch_results = await asyncio.gather(*[
             _fetch_query(client, q, pages=p) for q, p in jsearch_queries
         ])
 
-    adzuna_results = await asyncio.gather(*[
-        _fetch_adzuna(kw) for kw in adzuna_keywords
-    ])
+    adzuna_results, linkedin_results = await asyncio.gather(
+        asyncio.gather(*[_fetch_adzuna(kw) for kw in adzuna_keywords]),
+        _fetch_linkedin(linkedin_queries),
+    )
 
     # Merge and deduplicate by job_id AND by (normalised title + company)
     def _norm(s: str) -> str:
@@ -236,7 +314,7 @@ async def fetch_jobs(profile: dict) -> list[dict]:
     seen_ids: set    = set()
     seen_content: set = set()
     all_jobs: list[dict] = []
-    for batch in list(jsearch_results) + list(adzuna_results):
+    for batch in list(jsearch_results) + list(adzuna_results) + [linkedin_results]:
         for job in batch:
             jid          = job.get("job_id")
             content_key  = (_norm(job.get("job_title", "")), _norm(job.get("employer_name", "")))
