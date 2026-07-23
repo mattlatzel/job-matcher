@@ -163,6 +163,10 @@ async def _fetch_adzuna(keywords: str, location: str = "London", results_per_pag
                     "content-type":     "application/json",
                 },
             )
+        print(f"  Adzuna status {resp.status_code} for '{keywords}' (body len={len(resp.text)})")
+        if not resp.text or resp.status_code != 200:
+            print(f"  Adzuna empty/error response: status={resp.status_code} body='{resp.text[:200]}'")
+            return []
         data = resp.json()
         jobs = data.get("results", [])
         normalised = []
@@ -199,32 +203,35 @@ async def _fetch_adzuna(keywords: str, location: str = "London", results_per_pag
 
 
 async def fetch_jobs(profile: dict) -> list[dict]:
-    title           = profile.get("current_title", "professional")
-    domain          = profile.get("job_search_query") or title
+    title             = profile.get("current_title", "professional")
     adjacent_titles   = profile.get("adjacent_titles", [])[:6]
     target_sectors    = profile.get("target_sectors", [])[:4]
 
-    # JSearch queries — main + adjacent titles + sector-broadening
-    jsearch_queries = [
-        (f"{domain} in London",  6),
-        (f"{title} in London",   4),
-    ]
-    for adj in adjacent_titles:
-        jsearch_queries.append((f"{adj} in London", 3))
-    for sector in target_sectors:
-        jsearch_queries.append((f"{title} {sector} London", 2))
+    # JSearch queries — use clean titles only (not job_search_query which can be very long)
+    # Deduplicate titles to avoid sending same query twice
+    all_titles_deduped = list(dict.fromkeys([title] + adjacent_titles))
+    jsearch_queries = []
+    for i, t in enumerate(all_titles_deduped[:8]):
+        pages = 6 if i == 0 else (4 if i == 1 else 2)
+        jsearch_queries.append((f"{t} London", pages))
 
     print(f"  JSearch queries: {[q for q, _ in jsearch_queries]}")
 
-    # Adzuna keywords — main + adjacent titles + sectors
-    adzuna_keywords = [domain, title] + adjacent_titles[:4] + [f"{title} {s}" for s in target_sectors[:2]]
+    # Adzuna keywords — keep it simple: title + top adjacent titles only (max 4 total to avoid rate limits)
+    adzuna_keywords = list(dict.fromkeys([title] + adjacent_titles[:3]))[:4]
 
     async with httpx.AsyncClient(timeout=45) as client:
         jsearch_results = await asyncio.gather(*[
             _fetch_query(client, q, pages=p) for q, p in jsearch_queries
         ])
 
-    adzuna_results = await asyncio.gather(*[_fetch_adzuna(kw) for kw in adzuna_keywords])
+    # Adzuna: sequential with small delay to avoid rate limiting
+    adzuna_results = []
+    for kw in adzuna_keywords:
+        result = await _fetch_adzuna(kw)
+        adzuna_results.append(result)
+        if result:  # only delay if we got results (not rate limited)
+            await asyncio.sleep(0.5)
 
     # Merge and deduplicate by job_id AND by (normalised title + company)
     def _norm(s: str) -> str:
