@@ -1250,12 +1250,40 @@
   }
 
   // ── Job card toggle + activeJob tracking ─────────────────────────────────
+  let jobReactionTimer = null;
+
   function toggleJobCard(rowEl, event) {
     const detail = rowEl.nextElementSibling;
     const isOpening = !detail.classList.contains('open');
     detail.classList.toggle('open');
     const wrapper = rowEl.parentElement;
     activeJob = isOpening ? (wrapper._jobData || null) : null;
+
+    // Trigger Chelsea's proactive reaction when a card opens
+    if (isOpening && activeJob && sessionId) {
+      clearTimeout(jobReactionTimer);
+      jobReactionTimer = setTimeout(() => chelseyJobReaction(activeJob), 400);
+    }
+  }
+
+  async function chelseyJobReaction(job) {
+    if (chatWaiting) return;
+    setChatWaiting(true);
+    try {
+      const trigger = `[JOB_OPENED] I just opened the "${job.title}" role at ${job.company} (${job.score}% match).`;
+      const res = await fetch(`/api/chat/message/${sessionId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: trigger, active_job: job }),
+      });
+      const data = await res.json();
+      setChatWaiting(false);
+      addMsg('assistant', data.message);
+      enableInput();
+    } catch(e) {
+      setChatWaiting(false);
+      enableInput();
+    }
   }
 
   // ── Profile bar toggle ───────────────────────────────────────────────────
