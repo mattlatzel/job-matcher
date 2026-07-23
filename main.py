@@ -656,8 +656,26 @@ async def refine_turn(
     client: anthropic.AsyncAnthropic,
     cv_text: str,
     messages: list[dict],
+    active_job: dict | None = None,
 ) -> dict:
     system = REFINE_SYSTEM.format(cv_text=cv_text[:4000])
+    if active_job:
+        strengths = ", ".join(active_job.get("strengths", []))
+        gaps      = ", ".join(active_job.get("gaps", []))
+        system += f"""
+
+The candidate currently has this job expanded on their screen:
+- Title: {active_job.get("title", "")}
+- Company: {active_job.get("company", "")}
+- Match score: {active_job.get("score", "")}%
+- Salary: {active_job.get("salary_display") or active_job.get("_salary_display", "not listed")}
+- Seniority match: {active_job.get("seniority_match", "")}
+- Domain match: {active_job.get("domain_match", "")}
+- Strengths: {strengths}
+- Gaps: {gaps}
+- Description: {(active_job.get("description") or "")[:300]}
+
+If they ask about this role, use these details to explain the score and fit precisely."""
     resp = await client.messages.create(
         model=SONNET,
         max_tokens=400,
@@ -817,6 +835,7 @@ async def process_cv(session_id: str, cv_text: str, conversation_messages: list 
 
 class ChatMessageBody(BaseModel):
     message: str
+    active_job: dict | None = None
 
 @app.post("/api/chat/start")
 async def chat_start(file: UploadFile = File(...)):
@@ -885,7 +904,7 @@ async def chat_message_endpoint(
     ai_client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
 
     if s.get("chat_status") == "done":
-        result = await refine_turn(ai_client, s["cv_text"], s["messages"])
+        result = await refine_turn(ai_client, s["cv_text"], s["messages"], body.active_job)
     else:
         result = await chat_turn(ai_client, s["cv_text"], s["messages"])
 

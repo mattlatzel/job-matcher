@@ -809,6 +809,7 @@
   let visibleN    = 10;
   let isDocx      = false;
   let chatWaiting = false;
+  let activeJob   = null; // job currently expanded on screen
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
   const chatSection       = document.getElementById('chat-section');
@@ -929,7 +930,7 @@
       const res = await fetch(`/api/chat/message/${sessionId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, active_job: activeJob }),
       });
       const data = await res.json();
       setChatWaiting(false);
@@ -1157,8 +1158,9 @@
     const desc = job.description ? job.description.replace(/\s+/g, ' ').slice(0, 240) + (job.description.length > 240 ? '…' : '') : '';
 
     const wrapper = document.createElement('div');
+    wrapper._jobData = job; // attach job data for activeJob tracking
     wrapper.innerHTML = `
-      <div class="job-row" onclick="this.nextElementSibling.classList.toggle('open')">
+      <div class="job-row" onclick="toggleJobCard(this, event)">
         <div class="job-logo">${logoHtml}</div>
         <div class="job-row-body">
           <div class="job-row-title">${esc(job.title)}</div>
@@ -1182,6 +1184,15 @@
         </div>
       </div>`;
     return wrapper;
+  }
+
+  // ── Job card toggle + activeJob tracking ─────────────────────────────────
+  function toggleJobCard(rowEl, event) {
+    const detail = rowEl.nextElementSibling;
+    const isOpening = !detail.classList.contains('open');
+    detail.classList.toggle('open');
+    const wrapper = rowEl.parentElement;
+    activeJob = isOpening ? (wrapper._jobData || null) : null;
   }
 
   // ── Profile bar toggle ───────────────────────────────────────────────────
