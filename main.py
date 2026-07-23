@@ -40,6 +40,7 @@ ANTHROPIC_API_KEY  = os.getenv("ANTHROPIC_API_KEY")
 JSEARCH_API_KEY    = os.getenv("JSEARCH_API_KEY")
 ADZUNA_APP_ID      = os.getenv("ADZUNA_APP_ID")
 ADZUNA_APP_KEY     = os.getenv("ADZUNA_APP_KEY")
+REED_API_KEY       = os.getenv("REED_API_KEY")
 
 SONNET = "claude-sonnet-5"   # profile extraction — needs quality reasoning
 HAIKU  = "claude-haiku-4-5-20251001"   # job scoring — runs ~20+ times, needs speed
@@ -201,6 +202,52 @@ async def _fetch_adzuna(keywords: str, location: str = "London", results_per_pag
         return []
 
 
+async def _fetch_reed(keywords: str, location: str = "London", num_results: int = 100) -> list[dict]:
+    """Fetch jobs from Reed API using HTTP Basic Auth."""
+    if not REED_API_KEY:
+        return []
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(
+                "https://www.reed.co.uk/api/1.0/search",
+                params={
+                    "keywords":      keywords,
+                    "locationName":  location,
+                    "resultsToTake": num_results,
+                    "resultsToSkip": 0,
+                },
+                auth=(REED_API_KEY, ""),
+            )
+        print(f"  Reed status {resp.status_code} for '{keywords}' (body len={len(resp.text)})")
+        if resp.status_code != 200 or not resp.text:
+            print(f"  Reed error: status={resp.status_code} body='{resp.text[:200]}'")
+            return []
+        data = resp.json()
+        jobs = data.get("results", [])
+        normalised = []
+        for j in jobs:
+            normalised.append({
+                "job_id":          f"reed_{j.get('jobId', '')}",
+                "job_title":       j.get("jobTitle", ""),
+                "employer_name":   j.get("employerName", ""),
+                "job_city":        j.get("locationName", "London"),
+                "job_country":     "United Kingdom",
+                "job_is_remote":   False,
+                "job_description": j.get("jobDescription", ""),
+                "job_apply_link":  j.get("jobUrl", ""),
+                "job_google_link": j.get("jobUrl", ""),
+                "job_posted_at_datetime_utc": j.get("date", ""),
+                "_salary_display": (
+                    f"£{int(j['minimumSalary']):,}–£{int(j['maximumSalary']):,}"
+                    if j.get("minimumSalary") and j.get("maximumSalary") else None
+                ),
+            })
+        print(f"  Reed fetched {len(normalised)} jobs for '{keywords}'")
+        return normalised
+    except Exception as e:
+        print(f"  Reed error ({keywords}): {e}")
+        return []
+
 
 async def fetch_jobs(profile: dict) -> list[dict]:
     title             = profile.get("current_title", "professional")
@@ -237,8 +284,12 @@ async def fetch_jobs(profile: dict) -> list[dict]:
     for kw in adzuna_keywords:
         result = await _fetch_adzuna(kw)
         adzuna_results.append(result)
-        if result:  # only delay if we got results (not rate limited)
+        if result:
             await asyncio.sleep(0.5)
+
+    # Reed: 2 broad keywords in parallel — great salary data + finance coverage
+    reed_keywords = list(dict.fromkeys([_short(title)] + [_short(t) for t in adjacent_titles[:1]]))[:2]
+    reed_results = await asyncio.gather(*[_fetch_reed(kw) for kw in reed_keywords])
 
     # Merge and deduplicate by job_id AND by (normalised title + company)
     def _norm(s: str) -> str:
@@ -249,7 +300,7 @@ async def fetch_jobs(profile: dict) -> list[dict]:
     seen_ids: set    = set()
     seen_content: set = set()
     all_jobs: list[dict] = []
-    for batch in list(jsearch_results) + list(adzuna_results):
+    for batch in list(jsearch_results) + list(adzuna_results) + list(reed_results):
         for job in batch:
             jid          = job.get("job_id")
             content_key  = (_norm(job.get("job_title", "")), _norm(job.get("employer_name", "")))
@@ -272,7 +323,7 @@ async def fetch_jobs(profile: dict) -> list[dict]:
     titles_str  = ", ".join(f"**{t}**" for t in all_titles[:6])
     sectors_str = ", ".join(f"**{s}**" for s in all_sectors[:4])
 
-    search_summary = f"I searched London job boards (Indeed via JSearch and Adzuna) for roles matching {titles_str}."
+    search_summary = f"I searched London job boards (Indeed via JSearch, Adzuna, and Reed) for roles matching {titles_str}."
     if sectors_str:
         search_summary += f" I focused on {sectors_str} as your target sectors."
     search_summary += f" After removing duplicates I found **{len(all_jobs)} unique listings** to score against your CV."
