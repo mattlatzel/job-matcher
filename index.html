@@ -496,6 +496,23 @@
     .chip-gap     { background: #fef2f2; color: var(--red); border-color: #fee2e2; }
     .chip-strength{ background: #eff6ff; color: #1e40af; border-color: #dbeafe; }
 
+    .job-bullets {
+      margin: 0 0 10px 0;
+      padding-left: 18px;
+      font-size: .88rem;
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .job-bullets li { margin-bottom: 2px; }
+    .read-more-link {
+      font-size: .82rem;
+      color: var(--accent-cobalt);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .job-read-more { margin-bottom: 10px; }
+
     /* ── Salary chip ── */
     .salary-chip {
       display: inline-flex; align-items: center; gap: 4px;
@@ -1179,13 +1196,19 @@
       logoHtml = `<span class="job-logo-fallback">${initials}</span>`;
     }
 
-    const seniorityChip = `<span class="chip ${job.seniority_match ? 'chip-match' : 'chip-miss'}">${job.seniority_match ? '✓' : '⚠'} Seniority</span>`;
-    const domainChip    = `<span class="chip ${job.domain_match ? 'chip-match' : 'chip-miss'}">${job.domain_match ? '✓' : '⚠'} Domain</span>`;
     const strengthChips = (job.strengths || []).map(s => `<span class="chip chip-strength">+ ${esc(s)}</span>`).join('');
     const gapChips      = (job.gaps || []).map(g => `<span class="chip chip-gap">⚠ ${esc(g)}</span>`).join('');
 
-    // Short description (truncate at word boundary)
-    const desc = job.description ? job.description.replace(/\s+/g, ' ').slice(0, 240) + (job.description.length > 240 ? '…' : '') : '';
+    // Bullet summary or fallback sentences from description
+    const bulletItems = (job.bullets && job.bullets.length)
+      ? job.bullets
+      : (job.description || '').replace(/\s+/g, ' ').split(/\.\s+/).filter(Boolean).slice(0, 3);
+    const bulletsHtml = bulletItems.length
+      ? `<ul class="job-bullets">${bulletItems.map(b => `<li>${esc(b)}</li>`).join('')}</ul>`
+      : '';
+
+    // Full description for "read more"
+    const fullDesc = (job.description || '').replace(/\s+/g, ' ').trim();
 
     const wrapper = document.createElement('div');
     wrapper._jobData = job; // attach job data for activeJob tracking
@@ -1202,9 +1225,10 @@
         </a>
       </div>
       <div class="job-detail">
-        ${desc ? `<div class="job-detail-reason" style="color:var(--muted); font-style:italic;">${esc(desc)}</div>` : ''}
+        ${bulletsHtml}
+        ${fullDesc ? `<div class="job-read-more"><span class="read-more-link" onclick="toggleReadMore(this, event)">Read more</span><div class="read-more-body" style="display:none;"><p style="margin-top:8px;color:var(--muted);font-size:.85rem;line-height:1.6;">${esc(fullDesc)}</p></div></div>` : ''}
         <div class="job-detail-chips">
-          ${seniorityChip}${domainChip}${strengthChips}${gapChips}
+          ${strengthChips}${gapChips}
         </div>
         <div class="job-detail-footer">
           <a class="apply-btn" href="${esc(job.apply_link)}" target="_blank" rel="noopener">
@@ -1214,6 +1238,15 @@
         </div>
       </div>`;
     return wrapper;
+  }
+
+  // ── Read more toggle ─────────────────────────────────────────────────────
+  function toggleReadMore(linkEl, event) {
+    event.stopPropagation();
+    const body = linkEl.nextElementSibling;
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'block';
+    linkEl.textContent = isOpen ? 'Read more' : 'Show less';
   }
 
   // ── Job card toggle + activeJob tracking ─────────────────────────────────

@@ -371,12 +371,13 @@ Return a JSON array (one object per job, in order):
     "domain_match": true | false,
     "strengths": ["1-3 specific strengths from the CV that match this job"],
     "gaps": ["1-3 specific gaps or missing requirements, or empty array if none"],
-    "reason": "<2 sentences: overall fit summary>"
+    "reason": "<2 sentences: overall fit summary>",
+    "bullets": ["<what you'll own/build>", "<who they're looking for>", "<what makes this role distinct>"]
   }},
   ...
 ]
 
-JSON only. No prose."""
+bullets must describe the ROLE itself (not the company background). Max 12 words each. JSON only. No prose."""
         }]
     )
 
@@ -425,9 +426,10 @@ JSON only. No prose."""
             "strengths":       s.get("strengths", []),
             "gaps":            s.get("gaps", []),
             "reason":          s.get("reason", ""),
+            "bullets":         s.get("bullets", []),
             "posted":          (job.get("job_posted_at_datetime_utc") or "")[:10],
             "salary":          salary,
-            "description":     (job.get("job_description") or "")[:280].strip(),
+            "description":     (job.get("job_description") or "")[:600].strip(),
         })
     return results
 
