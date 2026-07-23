@@ -510,6 +510,27 @@
 
     /* ── Profile bar ── */
     #profile-bar { display: flex; align-items: center; gap: 8px; }
+    .profile-row {
+      display: flex;
+      gap: 10px;
+      padding: 3px 0;
+      font-size: .82rem;
+      line-height: 1.5;
+    }
+    .profile-label {
+      flex-shrink: 0;
+      width: 96px;
+      font-weight: 700;
+      color: #0b1b2b;
+      text-transform: uppercase;
+      font-size: .72rem;
+      letter-spacing: .04em;
+      padding-top: 1px;
+    }
+    .profile-val {
+      color: #334155;
+      flex: 1;
+    }
 
     /* ── Gap analysis tile ── */
     #gap-tile {
@@ -755,7 +776,7 @@
           <i class="fa-solid fa-chevron-down" id="profile-chevron" style="font-size:.8rem; color:var(--muted); flex-shrink:0; margin-top:3px; transition:transform .2s; transform:rotate(180deg);"></i>
         </div>
         <!-- Profile expanded text -->
-        <div id="profile-expanded" style="padding:10px 24px 14px; font-size:.82rem; border-bottom:1px solid var(--border); background:#f8fafc; color:#334155; line-height:1.6; display:none;"></div>
+        <div id="profile-expanded" style="padding:10px 24px 14px; border-bottom:1px solid var(--border); background:#f8fafc; display:none;"></div>
 
         <!-- Gap tile (collapsed) -->
         <div id="gap-tile" class="hidden" style="border-radius:0; border-left-width:3px; margin-bottom:0; border-left:3px solid var(--red); background:#fff9f9; border-bottom:1px solid #fee2e2; padding:12px 24px;">
@@ -1055,15 +1076,24 @@
     show('results');
     if (profile) {
       const exp  = profile.years_experience ? `${profile.years_experience} yrs exp` : '';
-      const adj  = (profile.adjacent_titles || []).length ? `Also searched: ${profile.adjacent_titles.join(', ')}` : '';
-      const want = profile.what_they_want ? `Looking for: ${profile.what_they_want}` : '';
 
       // Collapsed: just title + exp
       profileText.textContent = [profile.current_title, exp].filter(Boolean).join(' · ');
 
-      // Expanded: everything
+      // Expanded: structured rows
       const expanded = document.getElementById('profile-expanded');
-      expanded.textContent = [profile.current_title, exp, profile.core_domain, adj, want].filter(Boolean).join(' · ');
+      const titles  = (profile.adjacent_titles || []).join(', ');
+      const sectors = (profile.target_sectors  || []).join(', ');
+      const rows = [
+        profile.current_title    ? ['Role',          profile.current_title + (exp ? '  ·  ' + exp : '')] : null,
+        profile.core_domain      ? ['Domain',        profile.core_domain] : null,
+        titles                   ? ['Also searched', titles] : null,
+        sectors                  ? ['Sectors',       sectors] : null,
+        profile.what_they_want   ? ['Looking for',   profile.what_they_want] : null,
+      ].filter(Boolean);
+      expanded.innerHTML = rows.map(([label, val]) =>
+        `<div class="profile-row"><span class="profile-label">${label}</span><span class="profile-val">${esc(val)}</span></div>`
+      ).join('');
 
       profileBar.classList.remove('hidden');
     }
