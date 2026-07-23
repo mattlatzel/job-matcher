@@ -40,7 +40,7 @@ ANTHROPIC_API_KEY  = os.getenv("ANTHROPIC_API_KEY")
 JSEARCH_API_KEY    = os.getenv("JSEARCH_API_KEY")
 ADZUNA_APP_ID      = os.getenv("ADZUNA_APP_ID")
 ADZUNA_APP_KEY     = os.getenv("ADZUNA_APP_KEY")
-GUARDIAN_API_KEY   = os.getenv("GUARDIAN_API_KEY")
+MONSTER_API_KEY    = os.getenv("MONSTER_API_KEY")
 
 SONNET = "claude-sonnet-5"   # profile extraction — needs quality reasoning
 HAIKU  = "claude-haiku-4-5-20251001"   # job scoring — runs ~20+ times, needs speed
@@ -202,48 +202,49 @@ async def _fetch_adzuna(keywords: str, location: str = "London", results_per_pag
         return []
 
 
-async def _fetch_guardian(keywords: str, page_size: int = 50) -> list[dict]:
-    """Fetch jobs from The Guardian Jobs API and normalise to our internal format."""
-    if not GUARDIAN_API_KEY:
+async def _fetch_monster(keywords: str, location: str = "London, UK", num_results: int = 50) -> list[dict]:
+    """Fetch jobs from Monster Jobs API (RapidAPI) and normalise to our internal format."""
+    if not MONSTER_API_KEY:
         return []
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.get(
-                "https://content.guardianapis.com/search",
+                "https://monster-jobs-api.p.rapidapi.com/jobs/search",
                 params={
-                    "api-key":     GUARDIAN_API_KEY,
-                    "q":           keywords,
-                    "section":     "jobs",
-                    "page-size":   page_size,
-                    "show-fields": "headline,salary,locationDescription,employer,body,closingDate",
+                    "query":    keywords,
+                    "location": location,
+                    "limit":    num_results,
+                },
+                headers={
+                    "x-rapidapi-host": "monster-jobs-api.p.rapidapi.com",
+                    "x-rapidapi-key":  MONSTER_API_KEY,
                 },
             )
-        print(f"  Guardian status {resp.status_code} for '{keywords}' (body len={len(resp.text)})")
+        print(f"  Monster status {resp.status_code} for '{keywords}' (body len={len(resp.text)})")
         if not resp.text or resp.status_code != 200:
-            print(f"  Guardian error response: status={resp.status_code} body='{resp.text[:200]}'")
+            print(f"  Monster error response: status={resp.status_code} body='{resp.text[:200]}'")
             return []
         data = resp.json()
-        results = data.get("response", {}).get("results", [])
+        jobs = data if isinstance(data, list) else data.get("jobs", data.get("results", []))
         normalised = []
-        for j in results:
-            fields = j.get("fields", {})
+        for j in jobs:
             normalised.append({
-                "job_id":          f"guardian_{j.get('id', '')}",
-                "job_title":       fields.get("headline") or j.get("webTitle", ""),
-                "employer_name":   fields.get("employer", ""),
-                "job_city":        fields.get("locationDescription", "London"),
+                "job_id":          f"monster_{j.get('id') or j.get('jobId', '')}",
+                "job_title":       j.get("title") or j.get("jobTitle", ""),
+                "employer_name":   j.get("company") or j.get("companyName", ""),
+                "job_city":        j.get("location") or j.get("city", "London"),
                 "job_country":     "United Kingdom",
                 "job_is_remote":   False,
-                "job_description": fields.get("body", ""),
-                "job_apply_link":  j.get("webUrl", ""),
-                "job_google_link": j.get("webUrl", ""),
-                "job_posted_at_datetime_utc": "",
-                "_salary_display": fields.get("salary") or None,
+                "job_description": j.get("description") or j.get("snippet", ""),
+                "job_apply_link":  j.get("url") or j.get("applyUrl", ""),
+                "job_google_link": j.get("url") or j.get("applyUrl", ""),
+                "job_posted_at_datetime_utc": j.get("datePosted") or j.get("postedDate", ""),
+                "_salary_display": j.get("salary") or None,
             })
-        print(f"  Guardian fetched {len(normalised)} jobs for '{keywords}'")
+        print(f"  Monster fetched {len(normalised)} jobs for '{keywords}'")
         return normalised
     except Exception as e:
-        print(f"  Guardian error ({keywords}): {e}")
+        print(f"  Monster error ({keywords}): {e}")
         return []
 
 
@@ -279,9 +280,9 @@ async def fetch_jobs(profile: dict) -> list[dict]:
         if result:  # only delay if we got results (not rate limited)
             await asyncio.sleep(0.5)
 
-    # Guardian: 2 queries — main title + broadest adjacent title
-    guardian_keywords = list(dict.fromkeys([title] + adjacent_titles[:1]))[:2]
-    guardian_results = await asyncio.gather(*[_fetch_guardian(kw) for kw in guardian_keywords])
+    # Monster: 2 queries — main title + top adjacent title
+    monster_keywords = list(dict.fromkeys([title] + adjacent_titles[:1]))[:2]
+    monster_results = await asyncio.gather(*[_fetch_monster(kw) for kw in monster_keywords])
 
     # Merge and deduplicate by job_id AND by (normalised title + company)
     def _norm(s: str) -> str:
@@ -292,7 +293,7 @@ async def fetch_jobs(profile: dict) -> list[dict]:
     seen_ids: set    = set()
     seen_content: set = set()
     all_jobs: list[dict] = []
-    for batch in list(jsearch_results) + list(adzuna_results) + list(guardian_results):
+    for batch in list(jsearch_results) + list(adzuna_results) + list(monster_results):
         for job in batch:
             jid          = job.get("job_id")
             content_key  = (_norm(job.get("job_title", "")), _norm(job.get("employer_name", "")))
@@ -315,7 +316,7 @@ async def fetch_jobs(profile: dict) -> list[dict]:
     titles_str  = ", ".join(f"**{t}**" for t in all_titles[:6])
     sectors_str = ", ".join(f"**{s}**" for s in all_sectors[:4])
 
-    search_summary = f"I searched London job boards (Indeed, Adzuna, and Guardian Jobs) for roles matching {titles_str}."
+    search_summary = f"I searched London job boards (Indeed, Adzuna, and Monster) for roles matching {titles_str}."
     if sectors_str:
         search_summary += f" I focused on {sectors_str} as your target sectors."
     search_summary += f" After removing duplicates I found **{len(all_jobs)} unique listings** to score against your CV."
