@@ -405,8 +405,15 @@ bullets must describe the ROLE itself (not the company background). Max 12 words
         match = re.search(r"\[.*\]", text, re.DOTALL)
         scores: list[dict] = json.loads(match.group() if match else text)
     except Exception as e:
-        print(f"  Score batch parse error: {e}")
+        print(f"  Score batch parse error: {e} — trying object-by-object fallback")
+        # Extract individual {...} objects and parse them one by one
         scores = []
+        for obj_match in re.finditer(r'\{[^{}]+\}', text, re.DOTALL):
+            try:
+                scores.append(json.loads(obj_match.group()))
+            except Exception:
+                pass
+        print(f"  Fallback recovered {len(scores)} scores")
 
     results = []
     for i, job in enumerate(jobs):
