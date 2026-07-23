@@ -93,7 +93,7 @@ Return exactly this JSON structure:
   "core_domain": "1-sentence description of their main professional domain",
   "core_skills": ["top 6 most important skills"],
   "job_search_query": "best search query to find matching jobs (role + domain, e.g. 'Senior Product Manager SaaS')",
-  "adjacent_titles": ["5-6 related job titles spanning BOTH lateral moves AND adjacent/broader roles. Cast wide — include different role types (e.g. BA, Solutions Consultant, PM) and related sectors. Better to include more than too few."],
+  "adjacent_titles": ["5-6 SHORT, SEARCHABLE job titles as they appear on job boards — use common terms a recruiter would post, NOT niche CV jargon. Think broad transferable roles: e.g. 'Product Manager', 'Senior Business Analyst', 'Head of Product', 'Solutions Consultant'. Never include domain-specific suffixes like '- FIX Protocol' or '- Capital Markets'. The goal is maximum job board coverage."],
   "target_sectors": ["4-5 sectors/industries where this person's skills are genuinely applicable, e.g. 'fintech', 'investment banking', 'capital markets', 'payments', 'insurtech'"],
   "adjacent_seniority": ["the 1-2 seniority levels directly above and below their current level, e.g. ['lead', 'principal'] for a senior person"],
   "location": "city/country or Remote",
@@ -362,12 +362,14 @@ Description:
 ────────────────────
 """
 
+    what_they_want = profile.get("what_they_want", "")
     profile_block = f"""Current title: {profile.get('current_title')}
 Seniority: {profile.get('seniority')}
 Years of experience: {profile.get('years_experience')}
 Core domain: {profile.get('core_domain')}
 Core skills: {', '.join(profile.get('core_skills', []))}
-Summary: {profile.get('summary')}"""
+Summary: {profile.get('summary')}
+What they want next: {what_they_want or 'Not specified'}"""
 
     resp = await client.messages.create(
         model=SONNET,
@@ -377,10 +379,12 @@ Summary: {profile.get('summary')}"""
             "content": f"""You are a senior recruiter evaluating job fit. Score each job and provide a structured breakdown.
 
 Scoring rules:
-- Reason about core experience vs core requirements — NOT keyword overlap.
+- Reason about transferable experience and genuine capability — NOT keyword overlap.
+- A strong PM with 10+ years in fintech CAN do a PM role at a fintech startup even if their exact tech stack differs. Weight what they've actually done, not whether buzzwords match.
+- Weight "what they want next" heavily — a role that matches their stated direction should score higher even if the domain is slightly adjacent.
 - 90+: natural fit, strong alignment on seniority, domain, and skills.
-- 70-89: good alignment but some gaps.
-- Below 70: poor fit.
+- 70-89: good alignment, transferable experience, candidate could clearly do this job.
+- Below 70: poor fit — wrong level, wrong field, or fundamentally mismatched.
 - Be honest. Do not inflate scores.
 
 CANDIDATE:
@@ -771,7 +775,7 @@ Return exactly this JSON structure:
   "core_domain": "1-sentence description of their main professional domain",
   "core_skills": ["top 6 skills, informed by the conversation"],
   "job_search_query": "best search query to find matching jobs",
-  "adjacent_titles": ["5-6 related job titles spanning BOTH lateral moves AND adjacent/broader roles. Cast wide — include different role types and related sectors. Prioritise titles the candidate expressed interest in during the conversation."],
+  "adjacent_titles": ["5-6 SHORT, SEARCHABLE job titles as they appear on job boards — use common terms a recruiter would post, NOT niche CV jargon. Think broad transferable roles: e.g. 'Product Manager', 'Senior Business Analyst', 'Head of Product'. Never include domain-specific suffixes. Prioritise titles the candidate expressed interest in during the conversation."],
   "target_sectors": ["4-5 sectors/industries where this person's skills are genuinely applicable. Informed by what the candidate said they want."],
   "adjacent_seniority": ["the 1-2 seniority levels directly above and below their current level"],
   "what_they_want": "1-2 sentences on what they specifically said they want next",
