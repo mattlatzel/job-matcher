@@ -1300,6 +1300,14 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: trigger, active_job: job }),
       });
+      if (!res.ok) {
+        setChatWaiting(false);
+        if (res.status === 404) {
+          addMsg('assistant', 'It looks like this session has expired — please start a new search by uploading your CV again.');
+        }
+        enableInput();
+        return;
+      }
       const data = await res.json();
       setChatWaiting(false);
       addMsg('assistant', data.message);
