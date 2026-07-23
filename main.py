@@ -650,8 +650,18 @@ async def chat_turn(
     # If no messages yet, bootstrap with a user opener
     msgs = messages if messages else [{"role": "user", "content": "Hi, I just uploaded my CV."}]
 
+    # Detect user asking Chelsea to stop asking and just search
+    last_user_msg = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+    search_now_phrases = [
+        "just search", "search now", "start searching", "go ahead", "just go",
+        "enough questions", "stop asking", "just do it", "just do the search",
+        "search with what you have", "information you have", "you have enough",
+        "just start", "begin the search", "let's go", "lets go", "get searching",
+    ]
+    force_done = any(p in last_user_msg.lower() for p in search_now_phrases)
+
     # After 4 user answers, explicitly instruct Claude to wrap up
-    if user_count >= 4:
+    if user_count >= 4 or force_done:
         system += "\n\nIMPORTANT: You now have enough information. This must be your final message. Wrap up warmly, tell them you're starting the job search, and end with |||DONE|||"
 
     resp = await client.messages.create(
