@@ -851,9 +851,12 @@ async def process_cv(session_id: str, cv_text: str, conversation_messages: list 
         jobs = await prefilter_jobs(ai_client, profile, jobs)
         print(f"✓ Pre-filter passed: {len(jobs)} jobs")
 
-        # 4. Sonnet deep scoring
+        # 4. Haiku quick-rank → keep top 25 → Sonnet deep scoring
         print("▶ Step 4: Deep scoring…")
-        batches = [jobs[i:i+3] for i in range(0, len(jobs), 3)]
+        ranked = await quick_score_all(ai_client, profile, jobs)
+        top_jobs = [job for job, _ in ranked[:25]]
+
+        batches = [top_jobs[i:i+5] for i in range(0, len(top_jobs), 5)]
         sem = asyncio.Semaphore(6)
 
         async def score_with_sem(batch):
