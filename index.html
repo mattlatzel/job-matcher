@@ -796,6 +796,19 @@
         <!-- Profile expanded text -->
         <div id="profile-expanded" style="padding:10px 24px 14px; border-bottom:1px solid var(--border); background:#f8fafc; display:none;"></div>
 
+        <!-- Search summary tile (collapsed) -->
+        <div id="search-tile" class="hidden" style="border-bottom:1px solid var(--border); background:#fff;">
+          <div onclick="toggleSearchTile()" style="cursor:pointer; padding:10px 24px; display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:.82rem; font-weight:700; color:#0b1b2b; display:flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:.04em;">
+              <i class="fa-solid fa-magnifying-glass" style="color:var(--accent-cobalt); font-size:.8rem;"></i> How Chelsea searched
+            </span>
+            <i class="fa-solid fa-chevron-down" id="search-chevron" style="font-size:.75rem; color:var(--muted); transition:transform .2s;"></i>
+          </div>
+          <div id="search-body" style="display:none; padding:4px 24px 14px;">
+            <div id="search-summary-text" style="font-size:.85rem; color:#334155; line-height:1.7;"></div>
+          </div>
+        </div>
+
         <!-- Gap tile (collapsed) -->
         <div id="gap-tile" class="hidden" style="border-radius:0; border-left-width:3px; margin-bottom:0; border-left:3px solid var(--red); background:#fff9f9; border-bottom:1px solid #fee2e2; padding:12px 24px;">
           <h3 onclick="toggleGapTile()" style="cursor:pointer; user-select:none; justify-content:space-between; font-size:1rem;">
@@ -1116,6 +1129,12 @@
       profileBar.classList.remove('hidden');
     }
 
+    const summary = data.search_summary || '';
+    if (summary) {
+      document.getElementById('search-summary-text').innerHTML = renderMarkdown(summary);
+      document.getElementById('search-tile').classList.remove('hidden');
+    }
+
     const gaps = data.gap_analysis || [];
     if (gaps.length > 0) {
       gapList.innerHTML = gaps.map(g => `
@@ -1288,6 +1307,14 @@
   }
 
   // ── Profile bar toggle ───────────────────────────────────────────────────
+  function toggleSearchTile() {
+    const body    = document.getElementById('search-body');
+    const chevron = document.getElementById('search-chevron');
+    const isOpen  = body.style.display !== 'none';
+    body.style.display    = isOpen ? 'none' : 'block';
+    chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+  }
+
   function toggleProfileBar() {
     const expanded = document.getElementById('profile-expanded');
     const chevron  = document.getElementById('profile-chevron');

@@ -329,7 +329,20 @@ async def fetch_jobs(profile: dict) -> list[dict]:
             all_jobs.append(job)
 
     print(f"  Total unique jobs fetched: {len(all_jobs)}")
-    return all_jobs
+
+    # Build a human-readable search summary
+    all_titles  = list(dict.fromkeys([title] + adjacent_titles))
+    all_sectors = list(dict.fromkeys(target_sectors))
+
+    titles_str  = ", ".join(f"**{t}**" for t in all_titles[:6])
+    sectors_str = ", ".join(f"**{s}**" for s in all_sectors[:4])
+
+    search_summary = f"I searched London job boards (Indeed, Adzuna and LinkedIn) for roles matching {titles_str}."
+    if sectors_str:
+        search_summary += f" I focused on {sectors_str} as your target sectors."
+    search_summary += f" After removing duplicates I found **{len(all_jobs)} unique listings** to score against your CV."
+
+    return all_jobs, search_summary
 
 
 # ── Claude: Pre-filter jobs by title only ────────────────────────────────────
@@ -871,8 +884,9 @@ async def process_cv(session_id: str, cv_text: str, conversation_messages: list 
         # 2. Fetch jobs
         print("▶ Step 2: Fetching jobs…")
         session["status"] = "fetching_jobs"
-        jobs = await fetch_jobs(profile)
+        jobs, search_summary = await fetch_jobs(profile)
         session["total_jobs"] = len(jobs)
+        session["search_summary"] = search_summary
         print(f"✓ Fetched {len(jobs)} jobs")
 
         # 3. Pre-filter by title
@@ -1058,6 +1072,7 @@ async def get_results(session_id: str):
         "jobs":           s.get("results", []),
         "gap_analysis":   s.get("gap_analysis", []),
         "salary_insight": s.get("salary_insight"),
+        "search_summary": s.get("search_summary", ""),
     }
 
 
