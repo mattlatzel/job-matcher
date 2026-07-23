@@ -207,18 +207,25 @@ async def fetch_jobs(profile: dict) -> list[dict]:
     adjacent_titles   = profile.get("adjacent_titles", [])[:6]
     target_sectors    = profile.get("target_sectors", [])[:4]
 
-    # JSearch queries — use clean titles only (not job_search_query which can be very long)
-    # Deduplicate titles to avoid sending same query twice
+    # Strip specialisation suffix (everything after " - ") so queries are broad enough to return results.
+    # e.g. "Senior Product Manager - FIX Protocol & Trading Connectivity" → "Senior Product Manager"
+    def _short(t: str) -> str:
+        return t.split(" - ")[0].split(",")[0].strip()
+
     all_titles_deduped = list(dict.fromkeys([title] + adjacent_titles))
+    # For JSearch use the shortened title to get volume; scoring handles specificity
     jsearch_queries = []
     for i, t in enumerate(all_titles_deduped[:8]):
         pages = 6 if i == 0 else (4 if i == 1 else 2)
-        jsearch_queries.append((f"{t} London", pages))
+        jsearch_queries.append((f"{_short(t)} London", pages))
+    # Deduplicate queries (different long titles may share the same short form)
+    seen_q: set = set()
+    jsearch_queries = [(q, p) for q, p in jsearch_queries if not (q in seen_q or seen_q.add(q))]
 
     print(f"  JSearch queries: {[q for q, _ in jsearch_queries]}")
 
-    # Adzuna keywords — keep it simple: title + top adjacent titles only (max 4 total to avoid rate limits)
-    adzuna_keywords = list(dict.fromkeys([title] + adjacent_titles[:3]))[:4]
+    # Adzuna: short keywords only — full niche titles return 0 results
+    adzuna_keywords = list(dict.fromkeys([_short(title)] + [_short(t) for t in adjacent_titles[:3]]))[:4]
 
     async with httpx.AsyncClient(timeout=45) as client:
         jsearch_results = await asyncio.gather(*[
