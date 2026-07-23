@@ -300,19 +300,16 @@ async def fetch_jobs(profile: dict) -> list[dict]:
             _fetch_query(client, q, pages=p) for q, p in jsearch_queries
         ])
 
-    async def _linkedin_safe():
-        if not APIFY_API_KEY:
-            return []
-        try:
-            return await asyncio.wait_for(_fetch_linkedin(linkedin_queries), timeout=60)
-        except Exception as e:
-            print(f"  LinkedIn skipped: {e}")
-            return []
+    adzuna_results = await asyncio.gather(*[_fetch_adzuna(kw) for kw in adzuna_keywords])
 
-    adzuna_results, linkedin_results = await asyncio.gather(
-        asyncio.gather(*[_fetch_adzuna(kw) for kw in adzuna_keywords]),
-        _linkedin_safe(),
-    )
+    # LinkedIn runs independently with a hard cap — never blocks JSearch+Adzuna
+    try:
+        linkedin_results = await asyncio.wait_for(
+            _fetch_linkedin(linkedin_queries), timeout=65
+        )
+    except Exception as e:
+        print(f"  LinkedIn skipped: {e}")
+        linkedin_results = []
 
     # Merge and deduplicate by job_id AND by (normalised title + company)
     def _norm(s: str) -> str:
@@ -729,8 +726,8 @@ async def chat_turn(
     )
 
     text = next(b.text for b in resp.content if hasattr(b, "text")).strip()
-    done = "|||DONE|||" in text
-    clean = text.replace("|||DONE|||", "").strip()
+    done = bool(re.search(r'\|\|\|DONE\|*', text))
+    clean = re.sub(r'\|\|\|DONE\|*', '', text).strip()
     return {"message": clean, "done": done}
 
 
@@ -788,8 +785,8 @@ If they ask about this role, use these details to explain the score and fit prec
         messages=messages,
     )
     text = next(b.text for b in resp.content if hasattr(b, "text")).strip()
-    done = "|||DONE|||" in text
-    clean = text.replace("|||DONE|||", "").strip()
+    done = bool(re.search(r'\|\|\|DONE\|*', text))
+    clean = re.sub(r'\|\|\|DONE\|*', '', text).strip()
     return {"message": clean, "done": done}
 
 
