@@ -928,6 +928,12 @@
   });
 
   async function uploadCV(file) {
+    // If we already have a session and user drops a .docx, treat it as CV improvement upload
+    if (sessionId && file.name.toLowerCase().endsWith('.docx')) {
+      await uploadDocxForImprovement(file);
+      return;
+    }
+
     addMsg('file', `📄  ${file.name}`);
     setChatWaiting(true);
 
@@ -957,6 +963,29 @@
     } catch(e) {
       setChatWaiting(false);
       addMsg('assistant', 'Something went wrong connecting to the server. Please try again.');
+    }
+  }
+
+  async function uploadDocxForImprovement(file) {
+    addMsg('file', `📄  ${file.name}`);
+    setChatWaiting(true);
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const res = await fetch(`/api/upload-docx/${sessionId}`, { method: 'POST', body: form });
+      if (!res.ok) {
+        setChatWaiting(false);
+        addMsg('assistant', "Hmm, I couldn't read that file. Try again?");
+        enableInput();
+        return;
+      }
+      isDocx = true;
+      setChatWaiting(false);
+      // Now trigger the actual improvement
+      await improveCV();
+    } catch(e) {
+      setChatWaiting(false);
+      enableInput();
     }
   }
 
@@ -1315,21 +1344,48 @@
     }
   }
 
-  // ── Profile bar toggle ───────────────────────────────────────────────────
+  // ── Panel reactions ───────────────────────────────────────────────────────
+  async function chelseyPanelReaction(trigger) {
+    if (chatWaiting) return;
+    setChatWaiting(true);
+    try {
+      const res = await fetch(`/api/chat/message/${sessionId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: trigger }),
+      });
+      if (!res.ok) {
+        setChatWaiting(false);
+        if (res.status === 404) addMsg('assistant', 'It looks like this session has expired — please start a new search by uploading your CV again.');
+        enableInput();
+        return;
+      }
+      const data = await res.json();
+      setChatWaiting(false);
+      addMsg('assistant', data.message);
+      enableInput();
+    } catch(e) {
+      setChatWaiting(false);
+      enableInput();
+    }
+  }
+
   function toggleSearchTile() {
     const body    = document.getElementById('search-body');
     const chevron = document.getElementById('search-chevron');
     const isOpen  = body.style.display !== 'none';
-    body.style.display    = isOpen ? 'none' : 'block';
+    body.style.display     = isOpen ? 'none' : 'block';
     chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+    if (!isOpen) chelseyPanelReaction('[PANEL_OPENED: How Chelsea Searched] The candidate just opened the "How Chelsea Searched" section showing the search strategy and job sources.');
   }
 
   function toggleProfileBar() {
     const expanded = document.getElementById('profile-expanded');
     const chevron  = document.getElementById('profile-chevron');
     const open = expanded.style.display !== 'none';
-    expanded.style.display = open ? 'none' : 'block';
+    expanded.style.display  = open ? 'none' : 'block';
     chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+    if (open) chelseyPanelReaction('[PANEL_OPENED: Profile] The candidate just opened their profile summary showing how Chelsea interpreted their CV and experience.');
   }
 
   // ── Gap tile toggle ───────────────────────────────────────────────────────
@@ -1339,6 +1395,7 @@
     const open    = !body.classList.contains('hidden');
     body.classList.toggle('hidden', open);
     chevron.style.transform = open ? '' : 'rotate(180deg)';
+    if (!open) chelseyPanelReaction('[PANEL_OPENED: CV Gap Analysis] The candidate just opened the CV Gap Analysis section showing skills and experience gaps identified from their matched jobs.');
   }
 
   // ── Improve CV ────────────────────────────────────────────────────────────

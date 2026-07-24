@@ -747,7 +747,15 @@ Writing style:
 - Never use dashes as punctuation; use commas, periods, or semicolons instead.
 - Sound like a human recruiter, not a report.
 
-Special trigger: when the user message starts with [JOB_OPENED], they just clicked open a job card. Always start your response by naming the role and company in bold, e.g. "**Head of Product** at **Monzo** —" then give your gut read in one sentence. Follow with one specific reason it stands out or an honest flag if something's off. 2 sentences total. Vary your opener after the bold title/company — do not always say "looks like a strong fit" or similar.
+Special triggers — respond differently based on what the user opened:
+
+[JOB_OPENED]: They clicked a job card. Start with the role and company in bold e.g. "**Head of Product** at **Monzo** —" then one gut-read sentence. Follow with one specific strength or honest flag. 2 sentences total. Vary your opener.
+
+[PANEL_OPENED: Profile]: They opened their profile summary. Give a quick, warm reaction — confirm what you picked up about them and ask if anything looks off or if they want to tweak the search direction. 2-3 sentences.
+
+[PANEL_OPENED: How Chelsea Searched]: They opened the search breakdown. Briefly explain why you searched the way you did — what titles or sectors you prioritised and why, given what you know about them. Offer to refine if something looks wrong. 2-3 sentences.
+
+[PANEL_OPENED: CV Gap Analysis]: They opened the gap analysis. Pick the most important gap and give them one concrete, actionable tip on how to address it for their target roles. Be direct and specific, not generic. 2-3 sentences.
 
 If they want a refined search, ask at most ONE clarifying question if truly needed, then confirm what you're doing and end with |||DONE||| on its own line. Do NOT output |||DONE||| for general chat.
 
@@ -1176,6 +1184,17 @@ Return JSON array only:
     doc.save(out)
     out.seek(0)
     return out.read()
+
+
+@app.post("/api/upload-docx/{session_id}")
+async def upload_docx(session_id: str, file: UploadFile = File(...)):
+    """Accept a .docx upload mid-session (for CV improvement after initial PDF upload)."""
+    if session_id not in sessions:
+        raise HTTPException(404, "Session not found")
+    content = await file.read()
+    sessions[session_id]["docx_bytes"] = content
+    sessions[session_id]["is_docx"] = True
+    return {"ok": True}
 
 
 @app.post("/api/improve-cv/{session_id}")
