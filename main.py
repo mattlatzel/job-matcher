@@ -1223,6 +1223,12 @@ async def improve_cv(session_id: str):
 
 
 @app.get("/")
+async def serve_landing():
+    html = (Path(__file__).parent / "landing.html").read_text()
+    return HTMLResponse(content=html)
+
+
+@app.get("/app")
 async def serve_frontend():
     html = (Path(__file__).parent / "index.html").read_text()
     return HTMLResponse(content=html)
