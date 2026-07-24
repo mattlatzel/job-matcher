@@ -769,15 +769,7 @@
       <!-- ── Results ── -->
       <section id="results-section" class="hidden">
 
-        <!-- Inbox header -->
-        <div class="inbox-header">
-          <div class="inbox-title">
-            Inbox
-            <span class="inbox-count" id="threshold-count">0</span>
-          </div>
-        </div>
-
-        <!-- Threshold slider + freshness row -->
+        <!-- Threshold slider — STATIC, always visible -->
         <div style="display:flex; align-items:center; gap:14px; padding:10px 24px; background:#fff; border-bottom:1px solid var(--border); flex-shrink:0;">
           <span style="font-size:.82rem; font-weight:700; color:#0b1b2b; white-space:nowrap; text-transform:uppercase; letter-spacing:.04em;">Min match</span>
           <input type="range" id="threshold-slider" min="50" max="95" value="70" step="5" style="flex:1;" />
@@ -789,49 +781,59 @@
           </label>
         </div>
 
-        <!-- Profile bar (collapsible) -->
-        <div id="profile-bar" class="hidden" onclick="toggleProfileBar()" style="padding:10px 24px; font-size:.82rem; border-bottom:1px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
-          <div style="display:flex; align-items:flex-start; gap:8px; flex:1; min-width:0;">
-            <i class="fa-solid fa-user-tie" style="color:var(--accent-cobalt); margin-top:2px; flex-shrink:0;"></i>
-            <span class="profile-text" id="profile-text" style="font-weight:600; color:#0b1b2b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
-          </div>
-          <i class="fa-solid fa-chevron-down" id="profile-chevron" style="font-size:.8rem; color:var(--muted); flex-shrink:0; margin-top:3px; transition:transform .2s; transform:rotate(180deg);"></i>
-        </div>
-        <!-- Profile expanded text -->
-        <div id="profile-expanded" style="padding:10px 24px 14px; border-bottom:1px solid var(--border); background:#f8fafc; display:none;"></div>
+        <!-- Everything below scrolls -->
+        <div class="inbox-scroll">
 
-        <!-- Search summary tile (collapsed) -->
-        <div id="search-tile" class="hidden" style="border-bottom:1px solid var(--border); background:#fff;">
-          <div onclick="toggleSearchTile()" style="cursor:pointer; padding:10px 24px; display:flex; align-items:center; justify-content:space-between;">
-            <span style="font-size:.82rem; font-weight:700; color:#0b1b2b; display:flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:.04em;">
-              <i class="fa-solid fa-magnifying-glass" style="color:var(--accent-cobalt); font-size:.8rem;"></i> How Chelsea searched
-            </span>
-            <i class="fa-solid fa-chevron-down" id="search-chevron" style="font-size:.75rem; color:var(--muted); transition:transform .2s;"></i>
-          </div>
-          <div id="search-body" style="display:none; padding:4px 24px 14px;">
-            <div id="search-summary-text" style="font-size:.85rem; color:#334155; line-height:1.7;"></div>
-          </div>
-        </div>
-
-        <!-- Gap tile (collapsed) -->
-        <div id="gap-tile" class="hidden" style="border-radius:0; border-left-width:3px; margin-bottom:0; border-left:3px solid var(--red); background:#fff9f9; border-bottom:1px solid #fee2e2; padding:12px 24px;">
-          <h3 onclick="toggleGapTile()" style="cursor:pointer; user-select:none; justify-content:space-between; font-size:1rem;">
-            <span><i class="fa-solid fa-triangle-exclamation"></i> CV Gap Analysis</span>
-            <i class="fa-solid fa-chevron-down" id="gap-chevron" style="font-size:.85rem; color:var(--red); transition:transform .2s;"></i>
-          </h3>
-          <div id="gap-body" class="hidden" style="margin-top:12px;">
-            <div class="gap-sub">Based on recurring requirements across your matched London jobs</div>
-            <div id="gap-list"></div>
-            <div class="improve-btn-wrap hidden" id="improve-btn-wrap" style="margin-top:14px;">
-              <button class="btn-improve" id="improve-btn" onclick="improveCV()">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV
-              </button>
+          <!-- Inbox header -->
+          <div class="inbox-header">
+            <div class="inbox-title">
+              Inbox
+              <span class="inbox-count" id="threshold-count">0</span>
             </div>
           </div>
-        </div>
 
-        <!-- Scrollable job list -->
-        <div class="inbox-scroll">
+          <!-- Profile bar (collapsible) -->
+          <div id="profile-bar" class="hidden" onclick="toggleProfileBar()" style="padding:10px 24px; font-size:.82rem; border-bottom:1px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+            <div style="display:flex; align-items:flex-start; gap:8px; flex:1; min-width:0;">
+              <i class="fa-solid fa-user-tie" style="color:var(--accent-cobalt); margin-top:2px; flex-shrink:0;"></i>
+              <span class="profile-text" id="profile-text" style="font-weight:600; color:#0b1b2b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
+            </div>
+            <i class="fa-solid fa-chevron-down" id="profile-chevron" style="font-size:.8rem; color:var(--muted); flex-shrink:0; margin-top:3px; transition:transform .2s; transform:rotate(180deg);"></i>
+          </div>
+          <!-- Profile expanded text -->
+          <div id="profile-expanded" style="padding:10px 24px 14px; border-bottom:1px solid var(--border); background:#f8fafc; display:none;"></div>
+
+          <!-- Search summary tile (collapsed) -->
+          <div id="search-tile" class="hidden" style="border-bottom:1px solid var(--border); background:#fff;">
+            <div onclick="toggleSearchTile()" style="cursor:pointer; padding:10px 24px; display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-size:.82rem; font-weight:700; color:#0b1b2b; display:flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:.04em;">
+                <i class="fa-solid fa-magnifying-glass" style="color:var(--accent-cobalt); font-size:.8rem;"></i> How Chelsea searched
+              </span>
+              <i class="fa-solid fa-chevron-down" id="search-chevron" style="font-size:.75rem; color:var(--muted); transition:transform .2s;"></i>
+            </div>
+            <div id="search-body" style="display:none; padding:4px 24px 14px;">
+              <div id="search-summary-text" style="font-size:.85rem; color:#334155; line-height:1.7;"></div>
+            </div>
+          </div>
+
+          <!-- Gap tile (collapsed) -->
+          <div id="gap-tile" class="hidden" style="border-radius:0; border-left-width:3px; margin-bottom:0; border-left:3px solid var(--red); background:#fff9f9; border-bottom:1px solid #fee2e2; padding:12px 24px;">
+            <h3 onclick="toggleGapTile()" style="cursor:pointer; user-select:none; justify-content:space-between; font-size:1rem;">
+              <span><i class="fa-solid fa-triangle-exclamation"></i> CV Gap Analysis</span>
+              <i class="fa-solid fa-chevron-down" id="gap-chevron" style="font-size:.85rem; color:var(--red); transition:transform .2s;"></i>
+            </h3>
+            <div id="gap-body" class="hidden" style="margin-top:12px;">
+              <div class="gap-sub">Based on recurring requirements across your matched London jobs</div>
+              <div id="gap-list"></div>
+              <div class="improve-btn-wrap hidden" id="improve-btn-wrap" style="margin-top:14px;">
+                <button class="btn-improve" id="improve-btn" onclick="improveCV()">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Job list -->
           <div id="jobs-list"></div>
 
           <div id="no-results" class="hidden" style="padding:56px 24px; text-align:center;">
