@@ -276,11 +276,14 @@
     .features .section-title { color: var(--warm-text); }
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 1px; background: var(--cream-border);
       border: 1px solid var(--cream-border);
       border-radius: 16px; overflow: hidden;
       margin-top: 56px;
+    }
+    @media (max-width: 768px) {
+      .features-grid { grid-template-columns: 1fr; }
     }
     .feature { background: var(--cream-card); padding: 32px 28px; }
     .feature-icon { font-size: 1.6rem; margin-bottom: 14px; }
