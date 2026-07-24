@@ -732,6 +732,11 @@
             </div>
           </div>
         </div>
+        <div id="skip-btn-wrap" style="display:none; padding:0 24px 10px; flex-shrink:0;">
+          <button id="skip-btn" onclick="skipToSearch()" style="width:100%; padding:9px 16px; border-radius:10px; border:1.5px dashed #94a3b8; background:transparent; color:#475569; font-size:.82rem; font-weight:600; cursor:pointer; transition:all .15s;">
+            ⚡ Skip questions — start search now
+          </button>
+        </div>
         <p class="chat-hint">Upload as <strong>.docx</strong> to unlock AI CV improvement after matching</p>
         <p style="text-align:center; font-size:.72rem; color:#cbd5e1; padding: 6px 24px 10px; flex-shrink:0;">Built by Matt Latzel · 2026</p>
       </section>
@@ -956,9 +961,11 @@
       addMsg('assistant', data.message);
 
       if (data.done) {
+        hideSkipBtn();
         startSearch();
       } else {
         enableInput();
+        showSkipBtn();
       }
     } catch(e) {
       setChatWaiting(false);
@@ -1035,6 +1042,7 @@
 
   // ── Transition to search ──────────────────────────────────────────────────
   function startSearch() {
+    hideSkipBtn();
     disableInput();
     setTimeout(() => {
       show('progress');
@@ -1099,6 +1107,40 @@
   function disableInput() {
     chatTextInput.disabled = true;
     chatSendBtn.disabled = true;
+  }
+
+  function showSkipBtn() {
+    document.getElementById('skip-btn-wrap').style.display = 'block';
+  }
+
+  function hideSkipBtn() {
+    document.getElementById('skip-btn-wrap').style.display = 'none';
+  }
+
+  async function skipToSearch() {
+    if (chatWaiting || !sessionId) return;
+    hideSkipBtn();
+    setChatWaiting(true);
+    try {
+      const res = await fetch(`/api/chat/message/${sessionId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'just search now' }),
+      });
+      if (!res.ok) { setChatWaiting(false); enableInput(); return; }
+      const data = await res.json();
+      setChatWaiting(false);
+      addMsg('assistant', data.message);
+      if (data.done) {
+        startSearch();
+      } else {
+        enableInput();
+        showSkipBtn();
+      }
+    } catch(e) {
+      setChatWaiting(false);
+      enableInput();
+    }
   }
 
   // ── Slider ────────────────────────────────────────────────────────────────
