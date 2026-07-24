@@ -790,6 +790,9 @@
               Inbox
               <span class="inbox-count" id="threshold-count">0</span>
             </div>
+            <button class="btn-improve" id="improve-btn" onclick="improveCV()" style="font-size:.78rem; padding:6px 12px;">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV
+            </button>
           </div>
 
           <!-- Profile bar (collapsible) -->
@@ -825,11 +828,6 @@
             <div id="gap-body" class="hidden" style="margin-top:12px;">
               <div class="gap-sub">Based on recurring requirements across your matched London jobs</div>
               <div id="gap-list"></div>
-              <div class="improve-btn-wrap hidden" id="improve-btn-wrap" style="margin-top:14px;">
-                <button class="btn-improve" id="improve-btn" onclick="improveCV()">
-                  <i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV
-                </button>
-              </div>
             </div>
           </div>
 
@@ -1150,9 +1148,6 @@
         </div>`).join('');
       gapTile.classList.remove('hidden');
       // gap body stays collapsed by default — user clicks to expand
-      if (isDocx) {
-        document.getElementById('improve-btn-wrap').classList.remove('hidden');
-      }
     }
 
     visibleN = 10;
@@ -1349,6 +1344,13 @@
   // ── Improve CV ────────────────────────────────────────────────────────────
   async function improveCV() {
     const btn = document.getElementById('improve-btn');
+
+    // If they uploaded a PDF, prompt them to upload a Word doc instead
+    if (!isDocx) {
+      addMsg('assistant', "To improve your CV I need the Word version — PDFs can't be edited directly. Just drop your **.docx** file into the chat below and I'll get to work on it.");
+      return;
+    }
+
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Improving CV…';
     try {
@@ -1412,7 +1414,6 @@
     gapTile.classList.add('hidden');
     document.getElementById('gap-body').classList.add('hidden');
     document.getElementById('gap-chevron').style.transform = '';
-    document.getElementById('improve-btn-wrap').classList.add('hidden');
     const btn = document.getElementById('improve-btn');
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Improve my CV';
