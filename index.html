@@ -645,9 +645,13 @@
     }
 
     @media (max-width: 900px) {
-      .app-container { grid-template-columns: 1fr; }
-      .left-panel { height: 50%; border-right: none; border-bottom: 1px solid var(--border); }
-      .right-panel { height: 50%; }
+      .app-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+      .resize-handle { display: none; }
+      .left-panel { height: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+      .right-panel { height: 100%; }
     }
 
     .placeholder-card {
