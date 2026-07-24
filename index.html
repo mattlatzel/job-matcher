@@ -644,14 +644,34 @@
       background: #fff;
     }
 
+    /* ── Mobile tabs ── */
+    .mobile-tabs {
+      display: none;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .mobile-tab {
+      flex: 1; padding: 12px 8px;
+      border: none; background: none;
+      font-family: inherit; font-size: .85rem; font-weight: 600;
+      color: var(--muted); cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all .15s;
+    }
+    .mobile-tab.active { color: var(--accent-cobalt); border-bottom-color: var(--accent-cobalt); }
+
     @media (max-width: 900px) {
+      .mobile-tabs { display: flex; }
       .app-container {
         grid-template-columns: 1fr;
-        grid-template-rows: 1fr 1fr;
+        grid-template-rows: 1fr;
       }
       .resize-handle { display: none; }
-      .left-panel { height: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+      .left-panel { height: 100%; border-right: none; }
       .right-panel { height: 100%; }
+      .left-panel.mobile-hidden { display: none; }
+      .right-panel.mobile-hidden { display: none; }
     }
 
     .placeholder-card {
@@ -698,6 +718,11 @@
     <h1>Chelsea <span style="font-weight:400; font-size:1rem; opacity:.6; font-family:'Plus Jakarta Sans',sans-serif;">· Your AI Job Advisor</span></h1>
   </div>
 </header>
+
+<div class="mobile-tabs" id="mobile-tabs">
+  <button class="mobile-tab active" id="tab-chat" onclick="switchMobileTab('chat')">💬 Chat</button>
+  <button class="mobile-tab" id="tab-results" onclick="switchMobileTab('results')">📬 Results</button>
+</div>
 
 <main>
   <div class="app-container">
@@ -1483,11 +1508,33 @@
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  function switchMobileTab(tab) {
+    const left  = document.querySelector('.left-panel');
+    const right = document.querySelector('.right-panel');
+    const tabChat    = document.getElementById('tab-chat');
+    const tabResults = document.getElementById('tab-results');
+    if (tab === 'chat') {
+      left.classList.remove('mobile-hidden');
+      right.classList.add('mobile-hidden');
+      tabChat.classList.add('active');
+      tabResults.classList.remove('active');
+    } else {
+      left.classList.add('mobile-hidden');
+      right.classList.remove('mobile-hidden');
+      tabChat.classList.remove('active');
+      tabResults.classList.add('active');
+    }
+  }
+
   function show(section) {
     // Chat always stays visible in the left panel — never touched here
     initialStateCard.classList.toggle('hidden', section !== 'initial');
     progressSection.classList.toggle('hidden',  section !== 'progress');
     resultsSection.classList.toggle('hidden',   section !== 'results');
+    // On mobile, auto-switch to results tab when results arrive
+    if (section === 'results' && window.innerWidth <= 900) {
+      switchMobileTab('results');
+    }
   }
 
   function setStep(active, status) {
