@@ -558,8 +558,7 @@
     /* ── Load more ── */
     #load-more-wrap { text-align: center; }
 
-    /* ── Profile bar ── */
-    #profile-bar { display: flex; align-items: center; gap: 8px; }
+    /* ── Profile + search tile ── */
     .profile-row {
       display: flex;
       gap: 10px;
@@ -647,7 +646,9 @@
       flex-shrink: 0;
     }
     .ruled-out-info { flex: 1; min-width: 0; }
-    .ruled-out-title { font-size: .88rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ruled-out-title { font-size: .88rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+    .ruled-out-link { font-size: .75rem; font-weight: 500; color: var(--accent-cobalt); text-decoration: none; flex-shrink: 0; white-space: nowrap; }
+    .ruled-out-link:hover { text-decoration: underline; }
     .ruled-out-meta { font-size: .78rem; color: var(--muted); }
     .ruled-out-reason {
       font-size: .75rem; color: var(--muted);
@@ -908,26 +909,20 @@
             </button>
           </div>
 
-          <!-- Profile bar (collapsible) -->
-          <div id="profile-bar" class="hidden" onclick="toggleProfileBar()" style="padding:10px 24px; font-size:.82rem; border-bottom:1px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
-            <div style="display:flex; align-items:flex-start; gap:8px; flex:1; min-width:0;">
-              <i class="fa-solid fa-user-tie" style="color:var(--accent-cobalt); margin-top:2px; flex-shrink:0;"></i>
-              <span class="profile-text" id="profile-text" style="font-weight:600; color:#0b1b2b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
+          <!-- Combined profile + search tile (collapsible) -->
+          <div id="profile-bar" class="hidden" style="border-bottom:1px solid var(--border); background:#fff;">
+            <div onclick="toggleProfileBar()" style="cursor:pointer; padding:10px 24px; font-size:.82rem; display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+              <div style="display:flex; align-items:flex-start; gap:8px; flex:1; min-width:0;">
+                <i class="fa-solid fa-user-tie" style="color:var(--accent-cobalt); margin-top:2px; flex-shrink:0;"></i>
+                <span class="profile-text" id="profile-text" style="font-weight:600; color:#0b1b2b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
+              </div>
+              <i class="fa-solid fa-chevron-down" id="profile-chevron" style="font-size:.8rem; color:var(--muted); flex-shrink:0; margin-top:3px; transition:transform .2s;"></i>
             </div>
-            <i class="fa-solid fa-chevron-down" id="profile-chevron" style="font-size:.8rem; color:var(--muted); flex-shrink:0; margin-top:3px; transition:transform .2s; transform:rotate(180deg);"></i>
-          </div>
-          <!-- Profile expanded text -->
-          <div id="profile-expanded" style="padding:10px 24px 14px; border-bottom:1px solid var(--border); background:#f8fafc; display:none;"></div>
-
-          <!-- Search summary tile (collapsed) -->
-          <div id="search-tile" class="hidden" style="border-bottom:1px solid var(--border); background:#fff;">
-            <div onclick="toggleSearchTile()" style="cursor:pointer; padding:10px 24px; display:flex; align-items:center; justify-content:space-between;">
-              <span style="font-size:.82rem; font-weight:700; color:#0b1b2b; display:flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:.04em;">
-                <i class="fa-solid fa-magnifying-glass" style="color:var(--accent-cobalt); font-size:.8rem;"></i> How Chelsea searched
-              </span>
-              <i class="fa-solid fa-chevron-down" id="search-chevron" style="font-size:.75rem; color:var(--muted); transition:transform .2s;"></i>
-            </div>
-            <div id="search-body" style="display:none; padding:4px 24px 14px;">
+            <div id="profile-expanded" style="display:none; padding:0 24px 10px; background:#f8fafc;"></div>
+            <div id="search-body" style="display:none; padding:4px 24px 14px; border-top:1px solid var(--border);">
+              <div style="font-size:.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-magnifying-glass"></i> How Chelsea searched
+              </div>
               <div id="search-summary-text" style="font-size:.85rem; color:#334155; line-height:1.7;"></div>
             </div>
           </div>
@@ -1004,7 +999,7 @@
   const noResults       = document.getElementById('no-results');
   const loadMoreWrap    = document.getElementById('load-more-wrap');
   const loadMoreBtn     = document.getElementById('load-more-btn');
-  const profileBar      = document.getElementById('profile-bar');
+  const profileBar      = document.getElementById('profile-bar');   // combined tile
   const profileText     = document.getElementById('profile-text');
   const gapTile         = document.getElementById('gap-tile');
   const gapList         = document.getElementById('gap-list');
@@ -1356,7 +1351,7 @@
     const summary = data.search_summary || '';
     if (summary) {
       document.getElementById('search-summary-text').innerHTML = renderMarkdown(summary);
-      document.getElementById('search-tile').classList.remove('hidden');
+      document.getElementById('search-body').dataset.hasSummary = '1';
     }
     renderRuledOut();
     // Chelsea's wrap-up message
@@ -1404,7 +1399,7 @@
     const summary = data.search_summary || '';
     if (summary) {
       document.getElementById('search-summary-text').innerHTML = renderMarkdown(summary);
-      document.getElementById('search-tile').classList.remove('hidden');
+      document.getElementById('search-body').dataset.hasSummary = '1';
     }
 
     const gaps = data.gap_analysis || [];
@@ -1476,11 +1471,14 @@
     countEl.textContent = `(${ruledOutJobs.length})`;
 
     body.innerHTML = ruledOutJobs.map(job => {
-      const initial = (job.company || '?').trim()[0].toUpperCase();
+      const initial  = (job.company || '?').trim()[0].toUpperCase();
+      const linkHtml = job.apply_link
+        ? `<a href="${esc(job.apply_link)}" target="_blank" rel="noopener" class="ruled-out-link">View <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:.7rem;"></i></a>`
+        : '';
       return `<div class="ruled-out-card">
         <div class="ruled-out-initial">${esc(initial)}</div>
         <div class="ruled-out-info">
-          <div class="ruled-out-title">${esc(job.title)}</div>
+          <div class="ruled-out-title">${esc(job.title)}${linkHtml}</div>
           <div class="ruled-out-meta">${esc(job.company)}</div>
         </div>
         <div class="ruled-out-reason">${esc(job.reason)}</div>
@@ -1641,22 +1639,17 @@
     }
   }
 
-  function toggleSearchTile() {
-    const body    = document.getElementById('search-body');
-    const chevron = document.getElementById('search-chevron');
-    const isOpen  = body.style.display !== 'none';
-    body.style.display     = isOpen ? 'none' : 'block';
-    chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
-    if (!isOpen) chelseyPanelReaction('[PANEL_OPENED: How Chelsea Searched] The candidate just opened the "How Chelsea Searched" section showing the search strategy and job sources.');
-  }
-
   function toggleProfileBar() {
-    const expanded = document.getElementById('profile-expanded');
-    const chevron  = document.getElementById('profile-chevron');
-    const open = expanded.style.display !== 'none';
-    expanded.style.display  = open ? 'none' : 'block';
-    chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
-    if (open) chelseyPanelReaction('[PANEL_OPENED: Profile] The candidate just opened their profile summary showing how Chelsea interpreted their CV and experience.');
+    const expanded  = document.getElementById('profile-expanded');
+    const searchBody = document.getElementById('search-body');
+    const chevron   = document.getElementById('profile-chevron');
+    const isOpen    = expanded.style.display !== 'none';
+    const nowOpen   = !isOpen;
+    expanded.style.display   = nowOpen ? 'block' : 'none';
+    // Only show search body if a summary was loaded
+    if (searchBody.dataset.hasSummary) searchBody.style.display = nowOpen ? 'block' : 'none';
+    chevron.style.transform  = nowOpen ? 'rotate(180deg)' : '';
+    if (nowOpen) chelseyPanelReaction('[PANEL_OPENED: Profile & Search] The candidate just opened the profile summary and search strategy section.');
   }
 
   // ── Gap tile toggle ───────────────────────────────────────────────────────
@@ -1864,7 +1857,9 @@
     gapList.innerHTML = '';
     profileBar.classList.add('hidden');
     document.getElementById('profile-expanded').style.display = 'none';
-    document.getElementById('profile-chevron').style.transform = 'rotate(180deg)';
+    document.getElementById('search-body').style.display = 'none';
+    document.getElementById('search-body').dataset.hasSummary = '';
+    document.getElementById('profile-chevron').style.transform = '';
     gapTile.classList.add('hidden');
     document.getElementById('gap-body').classList.add('hidden');
     document.getElementById('gap-chevron').style.transform = '';

@@ -396,9 +396,10 @@ JSON array only. Example: [{{"p":true}},{{"p":false,"r":"unrelated field"}},{{"p
                 passed.append(job)
             else:
                 ruled_out.append({
-                    "title":   job.get("job_title", "Unknown Role"),
-                    "company": job.get("employer_name", "Unknown Company"),
-                    "reason":  dec.get("r", "Not a strong title match"),
+                    "title":      job.get("job_title", "Unknown Role"),
+                    "company":    job.get("employer_name", "Unknown Company"),
+                    "reason":     dec.get("r", "Not a strong title match"),
+                    "apply_link": job.get("job_apply_link") or job.get("job_google_link", ""),
                 })
 
     return passed, ruled_out
