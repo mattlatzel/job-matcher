@@ -1508,8 +1508,16 @@
       ? `<ul class="job-bullets">${bulletItems.map(b => `<li>${esc(b)}</li>`).join('')}</ul>`
       : '';
 
-    // Full description for "read more"
-    const fullDesc = (job.description || '').replace(/\s+/g, ' ').trim();
+    // Full description → bullet points for "read more"
+    const fullDescRaw = (job.description || '').replace(/\s+/g, ' ').trim();
+    const descBullets = fullDescRaw
+      ? fullDescRaw.split(/(?:\n|(?<=\w)\.\s+(?=[A-Z]))/).map(s => s.trim()).filter(s => s.length > 20)
+      : [];
+    const descBulletsHtml = descBullets.length
+      ? `<ul class="job-bullets" style="margin-top:8px;">${descBullets.map(b => `<li>${esc(b.replace(/\.$/,''))}</li>`).join('')}</ul>`
+      : '';
+
+    const companyHeader = `<div style="font-size:.72rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;">${esc(job.company)} is looking for:</div>`;
 
     const wrapper = document.createElement('div');
     wrapper._jobData = job; // attach job data for activeJob tracking
@@ -1526,8 +1534,8 @@
         </a>
       </div>
       <div class="job-detail">
-        ${bulletsHtml}
-        ${fullDesc ? `<div class="job-read-more"><span class="read-more-link" onclick="toggleReadMore(this, event)">Read more</span><div class="read-more-body" style="display:none;"><p style="margin-top:8px;color:var(--muted);font-size:.85rem;line-height:1.6;">${esc(fullDesc)}</p></div></div>` : ''}
+        ${bulletsHtml ? companyHeader + bulletsHtml : ''}
+        ${descBulletsHtml ? `<div class="job-read-more"><span class="read-more-link" onclick="toggleReadMore(this, event)">Read more</span><div class="read-more-body" style="display:none;">${descBulletsHtml}</div></div>` : ''}
         <div class="job-detail-chips">
           ${strengthChips}${gapChips}
         </div>
