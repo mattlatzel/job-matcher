@@ -1768,12 +1768,14 @@
   async function _drainThoughts() {
     if (_thoughtBusy || _thoughtQueue.length === 0) return;
     _thoughtBusy = true;
+    _showTyping(); // always typing before first thought
     while (_thoughtQueue.length > 0) {
       const { text, delay = 0, muted = false } = _thoughtQueue.shift();
-      if (delay) await _sleep(delay);
+      if (delay) await _sleep(delay); // typing indicator visible during this gap
       _removeTyping();
       _appendThought(text, muted);
-      await _sleep(320);
+      await _sleep(380);
+      if (_thoughtQueue.length > 0) _showTyping(); // typing again before next thought
     }
     _thoughtBusy = false;
   }
