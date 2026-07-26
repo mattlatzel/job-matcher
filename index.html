@@ -1324,9 +1324,7 @@
   function showStreamingResults(data) {
     show('results');
     if (profile) {
-      const exp = profile.years_experience ? `${profile.years_experience} yrs exp` : '';
-      profileText.textContent = [profile.current_title, exp].filter(Boolean).join(' · ');
-      profileBar.classList.remove('hidden');
+      renderProfileTile();
     }
     // Show a "loading more…" count bar
     const countBar = document.getElementById('streaming-bar');
@@ -1377,26 +1375,7 @@
     ruledOutJobs = data.ruled_out || [];
 
     show('results');
-    if (profile) {
-      const exp  = profile.years_experience ? `${profile.years_experience} yrs exp` : '';
-
-      // Expanded: structured rows
-      const expanded = document.getElementById('profile-expanded');
-      const titles  = (profile.adjacent_titles || []).join(', ');
-      const sectors = (profile.target_sectors  || []).join(', ');
-      const rows = [
-        profile.current_title    ? ['Role',          profile.current_title + (exp ? '  ·  ' + exp : '')] : null,
-        profile.core_domain      ? ['Domain',        profile.core_domain] : null,
-        titles                   ? ['Also searched', titles] : null,
-        sectors                  ? ['Sectors',       sectors] : null,
-        profile.what_they_want   ? ['Looking for',   profile.what_they_want] : null,
-      ].filter(Boolean);
-      expanded.innerHTML = rows.map(([label, val]) =>
-        `<div class="profile-row"><span class="profile-label">${label}</span><span class="profile-val">${esc(val)}</span></div>`
-      ).join('');
-
-      profileBar.classList.remove('hidden');
-    }
+    if (profile) renderProfileTile();
 
     const gaps = data.gap_analysis || [];
     if (gaps.length > 0) {
@@ -1426,6 +1405,26 @@
   }
 
   document.getElementById('freshness-toggle').addEventListener('change', renderJobs);
+
+  // ── Render profile tile ───────────────────────────────────────────────────
+  function renderProfileTile() {
+    if (!profile) return;
+    const exp      = profile.years_experience ? `${profile.years_experience} yrs exp` : '';
+    const titles   = (profile.adjacent_titles || []).join(', ');
+    const sectors  = (profile.target_sectors  || []).join(', ');
+    const rows = [
+      profile.current_title  ? ['Role',          profile.current_title + (exp ? '  ·  ' + exp : '')] : null,
+      profile.core_domain    ? ['Domain',        profile.core_domain] : null,
+      titles                 ? ['Also searched', titles] : null,
+      sectors                ? ['Sectors',       sectors] : null,
+      profile.what_they_want ? ['Looking for',   profile.what_they_want] : null,
+    ].filter(Boolean);
+    const expanded = document.getElementById('profile-expanded');
+    expanded.innerHTML = rows.map(([label, val]) =>
+      `<div class="profile-row"><span class="profile-label">${label}</span><span class="profile-val">${esc(val)}</span></div>`
+    ).join('');
+    profileBar.classList.remove('hidden');
+  }
 
   // ── Render jobs ───────────────────────────────────────────────────────────
   function renderJobs() {
