@@ -1282,7 +1282,8 @@
     let data;
     try { const r = await fetch(`/api/status/${sessionId}`); data = await r.json(); } catch(e) { return; }
     if (data.profile && !profile) profile = data.profile;
-    setStep(STATUS_STEP[data.status] || 1, data.status);
+    const nextStep = STATUS_STEP[data.status];
+    if (nextStep) setStep(nextStep, data.status);  // ignore unknown statuses — never fall back to 1
 
     if (data.status === 'scoring' || data.status === 'done') {
       try {
@@ -1743,8 +1744,8 @@
       const conn = document.getElementById(`ps-conn-${i}`);
       if (conn) conn.classList.toggle('done', i < active || status === 'done');
     }
-    // Trigger step-change thoughts
-    if (active !== _lastStep) { _lastStep = active; onStepChange(active); }
+    // Trigger step-change thoughts — steps only move forward, never backward
+    if (active > _lastStep) { _lastStep = active; onStepChange(active); }
   }
 
   // ── Chelsea thought engine ────────────────────────────────────────────────
@@ -1752,6 +1753,7 @@
   let _thoughtBusy    = false;
   let _typingEl       = null;
   let _waitingRotator = null;
+  let _drainGen       = 0;  // increments on clearThoughts() to invalidate stale async drains
 
   function addThought(text, opts = {}) {
     _thoughtQueue.push({ text, ...opts });
@@ -1761,14 +1763,17 @@
   async function _drainThoughts() {
     if (_thoughtBusy || _thoughtQueue.length === 0) return;
     _thoughtBusy = true;
-    _showTyping(); // always typing before first thought
+    const myGen = _drainGen;  // capture generation at start
+    _showTyping();
     while (_thoughtQueue.length > 0) {
       const { text, delay = 0, muted = false, id: elId } = _thoughtQueue.shift();
-      if (delay) await _sleep(delay); // typing indicator visible during this gap
+      if (delay) await _sleep(delay);
+      if (myGen !== _drainGen) return; // clearThoughts() was called — abort silently
       _removeTyping();
       _appendThought(text, muted, elId);
       await _sleep(380);
-      if (_thoughtQueue.length > 0) _showTyping(); // typing again before next thought
+      if (myGen !== _drainGen) return;
+      if (_thoughtQueue.length > 0) _showTyping();
     }
     _thoughtBusy = false;
   }
@@ -1805,7 +1810,7 @@
   function _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
   function clearThoughts() {
-    _thoughtQueue = []; _thoughtBusy = false; _lastStep = 0;
+    _thoughtQueue = []; _thoughtBusy = false; _lastStep = 0; _drainGen++;
     if (_waitingRotator) { clearInterval(_waitingRotator); _waitingRotator = null; }
     _removeTyping();
     const feed = document.getElementById('thought-feed');
