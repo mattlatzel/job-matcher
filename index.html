@@ -1749,9 +1749,10 @@
   }
 
   // ── Chelsea thought engine ────────────────────────────────────────────────
-  let _thoughtQueue = [];
-  let _thoughtBusy  = false;
-  let _typingEl     = null;
+  let _thoughtQueue   = [];
+  let _thoughtBusy    = false;
+  let _typingEl       = null;
+  let _waitingRotator = null;
 
   function addThought(text, opts = {}) {
     _thoughtQueue.push({ text, ...opts });
@@ -1763,23 +1764,24 @@
     _thoughtBusy = true;
     _showTyping(); // always typing before first thought
     while (_thoughtQueue.length > 0) {
-      const { text, delay = 0, muted = false } = _thoughtQueue.shift();
+      const { text, delay = 0, muted = false, id: elId } = _thoughtQueue.shift();
       if (delay) await _sleep(delay); // typing indicator visible during this gap
       _removeTyping();
-      _appendThought(text, muted);
+      _appendThought(text, muted, elId);
       await _sleep(380);
       if (_thoughtQueue.length > 0) _showTyping(); // typing again before next thought
     }
     _thoughtBusy = false;
   }
 
-  function _appendThought(text, muted) {
+  function _appendThought(text, muted, elId) {
     const feed = document.getElementById('thought-feed');
     if (!feed) return;
     const row = document.createElement('div');
     row.className = 'thought-row';
+    const idAttr = elId ? ` id="${elId}"` : '';
     row.innerHTML = `<img src="/static/Chelsea.jpg" class="thought-avatar" alt="Chelsea" />
-      <div class="thought-bubble${muted ? ' muted' : ''}">${text}</div>`;
+      <div class="thought-bubble${muted ? ' muted' : ''}"${idAttr}>${text}</div>`;
     feed.appendChild(row);
     feed.scrollTop = feed.scrollHeight;
   }
@@ -1805,6 +1807,7 @@
 
   function clearThoughts() {
     _thoughtQueue = []; _thoughtBusy = false; _lastStep = 0;
+    if (_waitingRotator) { clearInterval(_waitingRotator); _waitingRotator = null; }
     _removeTyping();
     const feed = document.getElementById('thought-feed');
     if (feed) feed.innerHTML = '';
@@ -1832,13 +1835,28 @@
       const total = profile ? ` — that's a lot of listings to go through` : '';
       addThought(`Okay, I have all the listings${total}. First pass: filtering out the obvious mismatches. Junior roles, wrong sector, that sort of thing.`, { delay: 300 });
       addThought("Now running my full analysis on the best candidates. This is where I actually read each job description and compare it to your CV — not just keywords.", { delay: 2800 });
-      addThought("Almost there. Your first results should start appearing any moment…", { delay: 5500, muted: true });
+      addThought("Bear with me — I want to make sure I score everything properly before showing you results.", { delay: 5500, muted: true, id: 'waiting-bubble' });
       _showTyping();
+      // Rotate the waiting message every 5s so it never feels frozen
+      const _waitingMessages = [
+        "Still going — there are quite a few roles worth reading carefully.",
+        "Almost there. I don't rush the scoring, it matters.",
+        "Bear with me — getting this right takes a moment.",
+        "Nearly done. Just making sure nothing good slips through.",
+        "Hang tight — I'm reading every description, not just skimming.",
+        "Just a little longer. You'll have solid results, I promise.",
+      ];
+      let _waitIdx = 0;
+      _waitingRotator = setInterval(() => {
+        const el = document.getElementById('waiting-bubble');
+        if (el) { el.textContent = _waitingMessages[_waitIdx % _waitingMessages.length]; _waitIdx++; }
+      }, 5000);
     }
   }
 
   // Called when partial results start arriving during scoring
   function thoughtOnFirstResults(n) {
+    if (_waitingRotator) { clearInterval(_waitingRotator); _waitingRotator = null; }
     _removeTyping();
     addThought(`First results in! Found <strong>${n} strong matches</strong> so far. Still scoring more in the background…`);
   }
