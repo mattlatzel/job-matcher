@@ -337,13 +337,14 @@ async def prefilter_jobs(
     client: anthropic.AsyncAnthropic,
     profile: dict,
     jobs: list[dict],
-) -> list[dict]:
+) -> tuple[list[dict], list[dict]]:
     """
     Quickly eliminate obvious mismatches using only job titles + companies.
-    Returns only the jobs worth scoring in detail.
+    Returns (passed, ruled_out) where ruled_out includes a brief reason.
     """
     batch_size = 20
     passed: list[dict] = []
+    ruled_out: list[dict] = []
 
     seniority     = profile.get("seniority", "")
     adj_seniority = profile.get("adjacent_seniority", [])
@@ -362,7 +363,7 @@ async def prefilter_jobs(
 
         resp = await client.messages.create(
             model=HAIKU,
-            max_tokens=512,
+            max_tokens=640,
             messages=[{
                 "role": "user",
                 "content": f"""You are a fast job screener. Decide which jobs are worth evaluating for this candidate.
@@ -372,25 +373,36 @@ CANDIDATE: {profile_line}
 JOBS:
 {titles_block}
 
-Return a JSON array of "yes" or "no" for each job (in order).
-"yes" = could plausibly be relevant — when in doubt, say yes.
-"no"  = only if clearly wrong field or wildly wrong level (e.g. junior dev for a senior PM).
+Return a JSON array with one object per job (in order).
+Pass = could plausibly be relevant — when in doubt, pass.
+Fail = only if clearly wrong field or wildly wrong seniority level.
 
-Be generous. It is better to include a borderline job than to miss a good match.
+Be generous. Missing a good match is worse than including a borderline one.
 
-JSON array only. Example: ["yes","no","yes"]"""
+JSON array only. Example: [{{"p":true}},{{"p":false,"r":"junior dev role"}},{{"p":true}}]"""
             }]
         )
 
         text = next(b.text for b in resp.content if hasattr(b, "text")).strip()
         match = re.search(r"\[.*?\]", text, re.DOTALL)
-        decisions: list[str] = json.loads(match.group() if match else text)
+        try:
+            decisions: list[dict] = json.loads(match.group() if match else text)
+        except Exception:
+            # fallback: pass everything in this batch
+            decisions = [{"p": True}] * len(batch)
 
         for j, job in enumerate(batch):
-            if j < len(decisions) and decisions[j].lower() == "yes":
+            dec = decisions[j] if j < len(decisions) else {"p": True}
+            if dec.get("p", True):
                 passed.append(job)
+            else:
+                ruled_out.append({
+                    "title":   job.get("job_title", "Unknown Role"),
+                    "company": job.get("employer_name", "Unknown Company"),
+                    "reason":  dec.get("r", "Not a strong title match"),
+                })
 
-    return passed
+    return passed, ruled_out
 
 
 # ── Claude: Score a batch of jobs against the profile ────────────────────────
@@ -907,8 +919,9 @@ async def process_cv(session_id: str, cv_text: str, conversation_messages: list 
         # 3. Pre-filter by title
         print("▶ Step 3: Pre-filtering…")
         session["status"] = "scoring"
-        jobs = await prefilter_jobs(ai_client, profile, jobs)
-        print(f"✓ Pre-filter passed: {len(jobs)} jobs")
+        jobs, ruled_out = await prefilter_jobs(ai_client, profile, jobs)
+        session["ruled_out"] = ruled_out
+        print(f"✓ Pre-filter passed: {len(jobs)} jobs, ruled out: {len(ruled_out)}")
 
         # 4. Haiku quick-rank → keep top 25 → Sonnet deep scoring
         print("▶ Step 4: Deep scoring…")
@@ -988,6 +1001,7 @@ async def chat_start(file: UploadFile = File(...)):
         "status":      "starting",
         "profile":     None,
         "results":     [],
+        "ruled_out":   [],
         "gap_analysis":   [],
         "salary_insight": None,
         "total_jobs":     0,
@@ -1059,6 +1073,7 @@ async def analyze(background_tasks: BackgroundTasks, file: UploadFile = File(...
         "status":       "starting",
         "profile":      None,
         "results":      [],
+        "ruled_out":    [],
         "gap_analysis": [],
         "total_jobs":   0,
         "error":        None,
@@ -1088,6 +1103,7 @@ async def get_results(session_id: str):
     s = sessions[session_id]
     return {
         "jobs":           s.get("results", []),
+        "ruled_out":      s.get("ruled_out", []),
         "gap_analysis":   s.get("gap_analysis", []),
         "salary_insight": s.get("salary_insight"),
         "search_summary": s.get("search_summary", ""),

@@ -267,6 +267,50 @@
     .screen-feature-label p { font-size: .88rem; color: var(--warm-muted); line-height: 1.5; }
     @media (max-width: 900px) { .screens-steps { grid-template-columns: 1fr; } }
 
+    /* ── Difference ── */
+    .difference {
+      background: var(--cream);
+      border-top: 1px solid var(--cream-border);
+      text-align: center;
+    }
+    .diff-headline {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 800; line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .diff-headline em { color: var(--blue); font-style: italic; }
+    .diff-sub {
+      color: var(--warm-muted); font-size: 1.05rem;
+      max-width: 500px; margin: 0 auto 64px; line-height: 1.7;
+    }
+    .diff-table {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 860px; margin: 0 auto;
+      border: 1px solid var(--cream-border);
+      border-radius: 20px; overflow: hidden;
+    }
+    .diff-col { padding: 36px 40px; text-align: left; }
+    .diff-col-other { background: #f0ebe3; border-right: 1px solid var(--cream-border); }
+    .diff-col-us { background: var(--blue); }
+    .diff-col-label {
+      font-size: .72rem; font-weight: 800;
+      letter-spacing: .1em; text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .diff-col-other .diff-col-label { color: var(--warm-muted); }
+    .diff-col-us .diff-col-label { color: rgba(255,255,255,0.6); }
+    .diff-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      margin-bottom: 18px; font-size: .97rem; line-height: 1.5;
+    }
+    .diff-col-other .diff-row { color: var(--warm-muted); text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.2); }
+    .diff-col-us .diff-row { color: white; }
+    .diff-icon { flex-shrink: 0; font-size: 1rem; }
+    @media (max-width: 640px) { .diff-table { grid-template-columns: 1fr; } .diff-col-other { border-right: none; border-bottom: 1px solid var(--cream-border); } }
+
     /* ── Features ── */
     .features {
       background: var(--cream);
@@ -384,6 +428,33 @@
 </section>
 
 <!-- Chelsea -->
+<section class="difference">
+  <div class="container">
+    <div class="section-label">The difference</div>
+    <h2 class="diff-headline">Every other tool<br />hands you a haystack.<br /><em>We hand you the needle.</em></h2>
+    <p class="diff-sub">Other tools make you do the searching. Chelsea reads your CV, hunts across the board, and delivers a ranked shortlist before you've touched a single listing.</p>
+
+    <div class="diff-table">
+      <div class="diff-col diff-col-other">
+        <div class="diff-col-label">Every other tool</div>
+        <div class="diff-row"><span class="diff-icon">📋</span> Browse 500+ listings yourself</div>
+        <div class="diff-row"><span class="diff-icon">🔍</span> You filter, you scroll, you guess</div>
+        <div class="diff-row"><span class="diff-icon">🎲</span> Apply and hope for the best</div>
+        <div class="diff-row"><span class="diff-icon">🫥</span> No idea why matches showed up</div>
+        <div class="diff-row"><span class="diff-icon">🕳️</span> Rejected roles vanish silently</div>
+      </div>
+      <div class="diff-col diff-col-us">
+        <div class="diff-col-label">Lalahunt</div>
+        <div class="diff-row"><span class="diff-icon">📄</span> Upload your CV once</div>
+        <div class="diff-row"><span class="diff-icon">🤖</span> Chelsea searches and ranks for you</div>
+        <div class="diff-row"><span class="diff-icon">🎯</span> Land on a pre-filtered shortlist</div>
+        <div class="diff-row"><span class="diff-icon">💡</span> Every score is explained</div>
+        <div class="diff-row"><span class="diff-icon">👁</span> See exactly what was ruled out and why</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="chelsea-section">
   <div class="container">
     <div class="chelsea-inner">

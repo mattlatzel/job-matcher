@@ -592,6 +592,40 @@
 
     #restart-link:hover { color: var(--accent-cobalt); }
 
+    /* ── Ruled Out section ── */
+    #ruled-out-section { border-top: 1px solid var(--border); }
+    #ruled-out-toggle {
+      width: 100%; padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: #f8fafc; border: none; cursor: pointer;
+      font-family: inherit; font-size: .82rem; font-weight: 700;
+      color: var(--muted); text-align: left;
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    #ruled-out-toggle:hover { background: #f1f5f9; color: #475569; }
+    .ruled-out-body { padding: 8px 0 16px; }
+    .ruled-out-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 24px;
+      opacity: 0.55;
+      transition: opacity .15s;
+    }
+    .ruled-out-card:hover { opacity: 0.75; }
+    .ruled-out-initial {
+      width: 32px; height: 32px; border-radius: 6px;
+      background: var(--border); display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 700; color: var(--muted);
+      flex-shrink: 0;
+    }
+    .ruled-out-info { flex: 1; min-width: 0; }
+    .ruled-out-title { font-size: .88rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ruled-out-meta { font-size: .78rem; color: var(--muted); }
+    .ruled-out-reason {
+      font-size: .75rem; color: var(--muted);
+      background: var(--accent-light); border-radius: 4px;
+      padding: 2px 8px; white-space: nowrap; flex-shrink: 0;
+    }
+
     /* ── Full-height split layout ── */
     .app-container {
       display: grid;
@@ -880,6 +914,15 @@
             </button>
           </div>
 
+          <!-- Ruled Out section (collapsed by default) -->
+          <div id="ruled-out-section" class="hidden">
+            <button id="ruled-out-toggle" onclick="toggleRuledOut()">
+              <span id="ruled-out-label"><i class="fa-solid fa-eye-slash" style="margin-right:6px;"></i> Roles Chelsea ruled out <span id="ruled-out-count"></span></span>
+              <i class="fa-solid fa-chevron-down" id="ruled-out-chevron" style="font-size:.75rem; transition:transform .2s;"></i>
+            </button>
+            <div id="ruled-out-body" class="ruled-out-body" style="display:none;"></div>
+          </div>
+
           <div id="restart-link" onclick="restart()" style="padding:20px; text-align:center; font-size:.85rem; color:var(--muted); cursor:pointer; font-weight:600;">
             <i class="fa-solid fa-rotate-left"></i> Start over with a different CV
           </div>
@@ -896,6 +939,7 @@
   let pollTimer   = null;
   let profile     = null;
   let allJobs     = [];
+  let ruledOutJobs = [];
   let visibleN    = 10;
   let isDocx      = false;
   let chatWaiting = false;
@@ -1207,6 +1251,7 @@
     const res  = await fetch(`/api/results/${sessionId}`);
     const data = await res.json();
     allJobs = data.jobs || [];
+    ruledOutJobs = data.ruled_out || [];
 
     show('results');
     if (profile) {
@@ -1252,6 +1297,7 @@
 
     visibleN = 10;
     renderJobs();
+    renderRuledOut();
 
     // Re-open chat for refinement
     setTimeout(() => {
@@ -1295,6 +1341,37 @@
   }
 
   loadMoreBtn.addEventListener('click', () => { visibleN += 10; renderJobs(); });
+
+  // ── Ruled Out ──────────────────────────────────────────────────────────────
+  function renderRuledOut() {
+    const section = document.getElementById('ruled-out-section');
+    const body    = document.getElementById('ruled-out-body');
+    const countEl = document.getElementById('ruled-out-count');
+    if (!ruledOutJobs.length) { section.classList.add('hidden'); return; }
+
+    section.classList.remove('hidden');
+    countEl.textContent = `(${ruledOutJobs.length})`;
+
+    body.innerHTML = ruledOutJobs.map(job => {
+      const initial = (job.company || '?').trim()[0].toUpperCase();
+      return `<div class="ruled-out-card">
+        <div class="ruled-out-initial">${esc(initial)}</div>
+        <div class="ruled-out-info">
+          <div class="ruled-out-title">${esc(job.title)}</div>
+          <div class="ruled-out-meta">${esc(job.company)}</div>
+        </div>
+        <div class="ruled-out-reason">${esc(job.reason)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function toggleRuledOut() {
+    const body    = document.getElementById('ruled-out-body');
+    const chevron = document.getElementById('ruled-out-chevron');
+    const isOpen  = body.style.display !== 'none';
+    body.style.display      = isOpen ? 'none' : 'block';
+    chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+  }
 
   // ── Build job row (inbox style) ───────────────────────────────────────────
   function buildCard(job) {
