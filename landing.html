@@ -272,61 +272,12 @@
       .how-step.flip { direction: ltr; }
     }
 
-    /* ── Screenshots ── */
-    .screenshots { background: var(--cream-card); border-top: 1px solid var(--cream-border); border-bottom: 1px solid var(--cream-border); }
-    .screens-steps {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px; margin-top: 56px;
-    }
-    .screen-frame {
-      border-radius: 12px; overflow: hidden;
-      border: 1px solid var(--cream-border);
-      box-shadow: 0 8px 32px rgba(30,21,8,0.08);
-    }
+    /* .screen-bar / .screen-dot still used by how-it-works steps */
     .screen-bar {
       background: #1e2d4a; padding: 8px 12px;
       display: flex; align-items: center; gap: 5px;
     }
     .screen-dot { width: 9px; height: 9px; border-radius: 50%; }
-    .screen-frame img {
-      width: 100%; display: block;
-      aspect-ratio: 16/10; object-fit: cover; object-position: top;
-    }
-    .screen-label {
-      padding: 10px 14px;
-      background: var(--cream-card);
-      border-top: 1px solid var(--cream-border);
-      font-size: .78rem; font-weight: 600; color: var(--warm-muted);
-      text-align: center; letter-spacing: .04em; text-transform: uppercase;
-    }
-    /* Big feature shot */
-    .screen-feature {
-      margin-top: 24px;
-      border-radius: 16px; overflow: hidden;
-      border: 1px solid var(--cream-border);
-      box-shadow: 0 16px 48px rgba(30,21,8,0.12);
-    }
-    .screen-feature img {
-      width: 100%; display: block;
-      object-fit: cover; object-position: top;
-    }
-    .screen-feature-label {
-      display: flex; align-items: center; gap: 12px;
-      padding: 16px 24px;
-      background: var(--cream-card);
-      border-top: 1px solid var(--cream-border);
-    }
-    .screen-feature-label .badge {
-      background: rgba(37,99,235,0.1);
-      border: 1px solid rgba(37,99,235,0.2);
-      color: var(--blue);
-      padding: 3px 10px; border-radius: 999px;
-      font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-      flex-shrink: 0;
-    }
-    .screen-feature-label p { font-size: .88rem; color: var(--warm-muted); line-height: 1.5; }
-    @media (max-width: 900px) { .screens-steps { grid-template-columns: 1fr; } }
 
     /* ── Difference ── */
     .difference {
@@ -634,59 +585,23 @@
         </div>
       </div>
 
-    </div>
-  </div>
-</section>
-
-<!-- Screenshots -->
-<section class="screenshots">
-  <div class="container">
-    <div class="section-label">See it in action</div>
-    <h2 class="section-title">From CV to curated inbox<br />in under 90 seconds.</h2>
-
-    <!-- 3-step flow -->
-    <div class="screens-steps">
-      <div class="screen-frame">
-        <div class="screen-bar">
-          <div class="screen-dot" style="background:#ff5f57;"></div>
-          <div class="screen-dot" style="background:#febc2e;"></div>
-          <div class="screen-dot" style="background:#28c840;"></div>
+      <!-- Bonus: Chelsea's deep analysis, full-width -->
+      <div class="how-step" style="margin-top: 0;">
+        <div class="how-step-text">
+          <div class="how-step-num">+</div>
+          <h3>Chelsea's honest take on every role</h3>
+          <p>Click any job and Chelsea tells you exactly what maps from your CV, where the gaps are, and whether it's genuinely worth your time. No hype, no vague "good fit" — specific strengths and real flags.</p>
         </div>
-        <img src="/static/screen3.jpg" alt="Chelsea reads your CV and asks smart questions" />
-        <div class="screen-label">1 · Upload &amp; chat</div>
-      </div>
-      <div class="screen-frame">
-        <div class="screen-bar">
-          <div class="screen-dot" style="background:#ff5f57;"></div>
-          <div class="screen-dot" style="background:#febc2e;"></div>
-          <div class="screen-dot" style="background:#28c840;"></div>
+        <div class="how-step-img">
+          <div class="screen-bar">
+            <div class="screen-dot" style="background:#ff5f57;"></div>
+            <div class="screen-dot" style="background:#febc2e;"></div>
+            <div class="screen-dot" style="background:#28c840;"></div>
+          </div>
+          <img src="/static/screen2.jpg" alt="Chelsea's detailed job analysis" style="aspect-ratio:16/10; object-fit:cover; object-position:top;" />
         </div>
-        <img src="/static/screen5.jpg" alt="Chelsea searches job boards in real time" />
-        <div class="screen-label">2 · Chelsea hunts</div>
       </div>
-      <div class="screen-frame">
-        <div class="screen-bar">
-          <div class="screen-dot" style="background:#ff5f57;"></div>
-          <div class="screen-dot" style="background:#febc2e;"></div>
-          <div class="screen-dot" style="background:#28c840;"></div>
-        </div>
-        <img src="/static/screen6.jpg" alt="Your curated inbox with ranked matches" />
-        <div class="screen-label">3 · Your matched inbox</div>
-      </div>
-    </div>
 
-    <!-- Feature highlight: deep job analysis -->
-    <div class="screen-feature">
-      <div class="screen-bar" style="border-radius:0;">
-        <div class="screen-dot" style="background:#ff5f57;"></div>
-        <div class="screen-dot" style="background:#febc2e;"></div>
-        <div class="screen-dot" style="background:#28c840;"></div>
-      </div>
-      <img src="/static/screen2.jpg" alt="Chelsea's detailed analysis of a job match" style="aspect-ratio:auto; max-height:520px; object-position:top;" />
-      <div class="screen-feature-label">
-        <span class="badge">Chelsea's take</span>
-        <p>Click any job and Chelsea gives you her honest read: what maps from your background, what the gaps are, and whether it's genuinely worth your time.</p>
-      </div>
     </div>
   </div>
 </section>

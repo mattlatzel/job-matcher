@@ -952,6 +952,7 @@ async def process_cv(session_id: str, cv_text: str, conversation_messages: list 
 
         # 5. Gap analysis + salary insight (parallel)
         print("▶ Step 5: Gap analysis + salary benchmarking…")
+        all_results = session["results"]
         gap_task    = analyze_cv_gaps(ai_client, profile, all_results)
         salary_task = analyze_salary(ai_client, profile, all_results)
         session["gap_analysis"], session["salary_insight"] = await asyncio.gather(gap_task, salary_task)
