@@ -68,10 +68,58 @@
       min-height: 100vh;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       text-align: center;
-      padding: 120px 24px 80px;
+      padding: 140px 24px 0;
       background: var(--cream);
       position: relative;
       overflow: hidden;
+    }
+
+    /* ── Hero browser mockup ── */
+    .hero-mockup-wrap {
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 56px;
+      padding-bottom: 60px;
+      perspective: 1400px;
+    }
+    .hero-mockup {
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--cream-border);
+      box-shadow:
+        0 32px 96px rgba(30,21,8,0.14),
+        0 8px 32px rgba(30,21,8,0.08),
+        0 0 0 1px rgba(30,21,8,0.04);
+      transform: rotateX(5deg);
+      transform-origin: top center;
+      transition: transform .4s ease;
+    }
+    .hero-mockup:hover { transform: rotateX(1deg); }
+    .hero-browser-bar {
+      background: #1e2d4a;
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 12px;
+      flex-shrink: 0;
+    }
+    .hero-browser-dots { display: flex; gap: 6px; }
+    .hero-browser-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .hero-browser-url {
+      flex: 1; max-width: 340px; margin: 0 auto;
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px; padding: 4px 12px;
+      font-size: .75rem; color: rgba(255,255,255,0.55);
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .hero-browser-url svg { opacity: 0.5; flex-shrink: 0; }
+    .hero-mockup img {
+      width: 100%; display: block;
+      aspect-ratio: 16/9; object-fit: cover; object-position: top;
+    }
+    @media (max-width: 700px) {
+      .hero-mockup { transform: none; }
+      .hero-mockup:hover { transform: none; }
     }
     .hero::before {
       content: '';
@@ -411,6 +459,24 @@
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
   </a>
   <p class="hero-note">Free to use · No sign-up required · London roles only</p>
+
+  <!-- Browser mockup -->
+  <div class="hero-mockup-wrap">
+    <div class="hero-mockup">
+      <div class="hero-browser-bar">
+        <div class="hero-browser-dots">
+          <div class="hero-browser-dot" style="background:#ff5f57;"></div>
+          <div class="hero-browser-dot" style="background:#febc2e;"></div>
+          <div class="hero-browser-dot" style="background:#28c840;"></div>
+        </div>
+        <div class="hero-browser-url">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          lalahunt.com/app
+        </div>
+      </div>
+      <img src="/static/screen6.jpg" alt="Chelsea's curated job inbox" />
+    </div>
+  </div>
 </section>
 
 <!-- Problem -->
