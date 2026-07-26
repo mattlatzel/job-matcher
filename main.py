@@ -263,8 +263,12 @@ async def fetch_jobs(profile: dict) -> list[dict]:
     # For JSearch use the shortened title to get volume; scoring handles specificity
     jsearch_queries = []
     for i, t in enumerate(all_titles_deduped[:8]):
-        pages = 6 if i == 0 else (4 if i == 1 else 2)
+        pages = 10 if i == 0 else (6 if i == 1 else 3)
         jsearch_queries.append((f"{_short(t)} London", pages))
+    # Also add a sector-based query for the primary title to catch sector-tagged listings
+    if target_sectors:
+        sector_kw = target_sectors[0]
+        jsearch_queries.append((f"{_short(title)} {sector_kw} London", 4))
     # Deduplicate queries (different long titles may share the same short form)
     seen_q: set = set()
     jsearch_queries = [(q, p) for q, p in jsearch_queries if not (q in seen_q or seen_q.add(q))]
@@ -272,7 +276,7 @@ async def fetch_jobs(profile: dict) -> list[dict]:
     print(f"  JSearch queries: {[q for q, _ in jsearch_queries]}")
 
     # Adzuna: short keywords only — full niche titles return 0 results
-    adzuna_keywords = list(dict.fromkeys([_short(title)] + [_short(t) for t in adjacent_titles[:3]]))[:4]
+    adzuna_keywords = list(dict.fromkeys([_short(title)] + [_short(t) for t in adjacent_titles[:4]]))[:5]
 
     async with httpx.AsyncClient(timeout=45) as client:
         jsearch_results = await asyncio.gather(*[
@@ -282,8 +286,8 @@ async def fetch_jobs(profile: dict) -> list[dict]:
     # Adzuna: parallel (4 light requests, errors caught per-call)
     adzuna_results = await asyncio.gather(*[_fetch_adzuna(kw) for kw in adzuna_keywords])
 
-    # Reed: 2 broad keywords in parallel — great salary data + finance coverage
-    reed_keywords = list(dict.fromkeys([_short(title)] + [_short(t) for t in adjacent_titles[:1]]))[:2]
+    # Reed: broader — 3 keywords in parallel
+    reed_keywords = list(dict.fromkeys([_short(title)] + [_short(t) for t in adjacent_titles[:2]]))[:3]
     reed_results = await asyncio.gather(*[_fetch_reed(kw) for kw in reed_keywords])
 
     # Merge and deduplicate by job_id AND by (normalised title + company)
@@ -369,12 +373,12 @@ JOBS:
 {titles_block}
 
 Return a JSON array with one object per job (in order).
-Pass = could plausibly be relevant — when in doubt, pass.
-Fail = only if clearly wrong field or wildly wrong seniority level.
+Pass = anything that could conceivably be relevant to this candidate's background or next step.
+Fail = ONLY if the job is in a completely unrelated field (e.g. chef for a software engineer) OR is clearly entry-level for a senior candidate with 5+ years exp.
 
-Be generous. Missing a good match is worse than including a borderline one.
+Be very generous — when in doubt, always pass. False positives cost nothing; false negatives lose good matches.
 
-JSON array only. Example: [{{"p":true}},{{"p":false,"r":"junior dev role"}},{{"p":true}}]"""
+JSON array only. Example: [{{"p":true}},{{"p":false,"r":"unrelated field"}},{{"p":true}}]"""
             }]
         )
 
@@ -936,7 +940,7 @@ async def process_cv(session_id: str, cv_text: str, conversation_messages: list 
             return 1
 
         jobs.sort(key=_title_relevance, reverse=True)
-        top_jobs = jobs[:25]
+        top_jobs = jobs[:40]
 
         batches = [top_jobs[i:i+5] for i in range(0, len(top_jobs), 5)]
         sem = asyncio.Semaphore(6)
