@@ -1010,8 +1010,7 @@
   const noResults       = document.getElementById('no-results');
   const loadMoreWrap    = document.getElementById('load-more-wrap');
   const loadMoreBtn     = document.getElementById('load-more-btn');
-  const profileBar      = document.getElementById('profile-bar');   // combined tile
-  const profileText     = document.getElementById('profile-text');
+  const profileBar      = document.getElementById('profile-bar');
   const gapTile         = document.getElementById('gap-tile');
   const gapList         = document.getElementById('gap-list');
   const slider          = document.getElementById('threshold-slider');
@@ -1380,9 +1379,6 @@
     show('results');
     if (profile) {
       const exp  = profile.years_experience ? `${profile.years_experience} yrs exp` : '';
-
-      // Collapsed: just title + exp
-      profileText.textContent = [profile.current_title, exp].filter(Boolean).join(' · ');
 
       // Expanded: structured rows
       const expanded = document.getElementById('profile-expanded');
