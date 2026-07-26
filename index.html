@@ -909,28 +909,18 @@
             </button>
           </div>
 
-          <!-- Combined profile + search tile (collapsible) -->
-          <div id="profile-bar" class="hidden" style="border-bottom:1px solid var(--border); background:#fff;">
-            <div onclick="toggleProfileBar()" style="cursor:pointer; padding:10px 24px; font-size:.82rem; display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
-              <div style="display:flex; align-items:flex-start; gap:8px; flex:1; min-width:0;">
-                <i class="fa-solid fa-user-tie" style="color:var(--accent-cobalt); margin-top:2px; flex-shrink:0;"></i>
-                <span class="profile-text" id="profile-text" style="font-weight:600; color:#0b1b2b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
-              </div>
-              <i class="fa-solid fa-chevron-down" id="profile-chevron" style="font-size:.8rem; color:var(--muted); flex-shrink:0; margin-top:3px; transition:transform .2s;"></i>
+          <!-- Profile tile -->
+          <div id="profile-bar" class="hidden" style="border-bottom:1px solid var(--border); background:#f8fafc; padding:10px 24px 14px;">
+            <div style="font-size:.72rem; font-weight:700; color:var(--accent-cobalt); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-crosshairs"></i> We are looking for…
             </div>
-            <div id="profile-expanded" style="display:none; padding:0 24px 10px; background:#f8fafc;"></div>
-            <div id="search-body" style="display:none; padding:4px 24px 14px; border-top:1px solid var(--border);">
-              <div style="font-size:.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-magnifying-glass"></i> How Chelsea searched
-              </div>
-              <div id="search-summary-text" style="font-size:.85rem; color:#334155; line-height:1.7;"></div>
-            </div>
+            <div id="profile-expanded"></div>
           </div>
 
           <!-- Gap tile (collapsed) -->
           <div id="gap-tile" class="hidden" style="border-radius:0; border-left-width:3px; margin-bottom:0; border-left:3px solid var(--red); background:#fff9f9; border-bottom:1px solid #fee2e2; padding:12px 24px;">
             <h3 onclick="toggleGapTile()" style="cursor:pointer; user-select:none; justify-content:space-between; font-size:1rem;">
-              <span><i class="fa-solid fa-triangle-exclamation"></i> CV Gap Analysis</span>
+              <span><i class="fa-solid fa-triangle-exclamation"></i> We are missing…</span>
               <i class="fa-solid fa-chevron-down" id="gap-chevron" style="font-size:.85rem; color:var(--red); transition:transform .2s;"></i>
             </h3>
             <div id="gap-body" class="hidden" style="margin-top:12px;">
@@ -1348,11 +1338,6 @@
         </div>`).join('');
       gapTile.classList.remove('hidden');
     }
-    const summary = data.search_summary || '';
-    if (summary) {
-      document.getElementById('search-summary-text').innerHTML = renderMarkdown(summary);
-      document.getElementById('search-body').dataset.hasSummary = '1';
-    }
     renderRuledOut();
     // Chelsea's wrap-up message
     const n = allJobs.filter(j => j.score >= parseInt(slider.value)).length;
@@ -1394,12 +1379,6 @@
       ).join('');
 
       profileBar.classList.remove('hidden');
-    }
-
-    const summary = data.search_summary || '';
-    if (summary) {
-      document.getElementById('search-summary-text').innerHTML = renderMarkdown(summary);
-      document.getElementById('search-body').dataset.hasSummary = '1';
     }
 
     const gaps = data.gap_analysis || [];
@@ -1639,18 +1618,7 @@
     }
   }
 
-  function toggleProfileBar() {
-    const expanded  = document.getElementById('profile-expanded');
-    const searchBody = document.getElementById('search-body');
-    const chevron   = document.getElementById('profile-chevron');
-    const isOpen    = expanded.style.display !== 'none';
-    const nowOpen   = !isOpen;
-    expanded.style.display   = nowOpen ? 'block' : 'none';
-    // Only show search body if a summary was loaded
-    if (searchBody.dataset.hasSummary) searchBody.style.display = nowOpen ? 'block' : 'none';
-    chevron.style.transform  = nowOpen ? 'rotate(180deg)' : '';
-    if (nowOpen) chelseyPanelReaction('[PANEL_OPENED: Profile & Search] The candidate just opened the profile summary and search strategy section.');
-  }
+  function toggleProfileBar() { /* no-op: profile tile is always expanded */ }
 
   // ── Gap tile toggle ───────────────────────────────────────────────────────
   function toggleGapTile() {
@@ -1856,10 +1824,7 @@
     jobsList.innerHTML = '';
     gapList.innerHTML = '';
     profileBar.classList.add('hidden');
-    document.getElementById('profile-expanded').style.display = 'none';
-    document.getElementById('search-body').style.display = 'none';
-    document.getElementById('search-body').dataset.hasSummary = '';
-    document.getElementById('profile-chevron').style.transform = '';
+    document.getElementById('profile-expanded').innerHTML = '';
     gapTile.classList.add('hidden');
     document.getElementById('gap-body').classList.add('hidden');
     document.getElementById('gap-chevron').style.transform = '';
