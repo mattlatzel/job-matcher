@@ -873,7 +873,8 @@ JSON only. No prose."""
 
     text = next(b.text for b in resp.content if hasattr(b, "text")).strip()
     match = re.search(r"\{.*\}", text, re.DOTALL)
-    return json.loads(match.group() if match else text)
+    raw = match.group() if match else text
+    return json.loads(raw, strict=False)  # strict=False tolerates control chars in strings
 
 
 # ── Claude: Salary benchmarking ──────────────────────────────────────────────
