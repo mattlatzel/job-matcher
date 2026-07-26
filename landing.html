@@ -195,21 +195,34 @@
 
     /* ── How it works ── */
     .how { background: var(--cream-card); border-top: 1px solid var(--cream-border); border-bottom: 1px solid var(--cream-border); }
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 32px; margin-top: 60px;
+    .how-steps { display: flex; flex-direction: column; gap: 80px; margin-top: 72px; }
+    .how-step {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 64px; align-items: center;
     }
-    .step { display: flex; flex-direction: column; gap: 14px; }
-    .step-num {
-      width: 40px; height: 40px; border-radius: 10px;
-      background: rgba(37,99,235,0.1);
-      border: 1px solid rgba(37,99,235,0.25);
+    .how-step.flip { direction: rtl; }
+    .how-step.flip > * { direction: ltr; }
+    .how-step-text { display: flex; flex-direction: column; gap: 16px; }
+    .how-step-num {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.25);
       display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: .9rem; color: var(--blue);
+      font-weight: 700; font-size: .88rem; color: var(--blue);
     }
-    .step h3 { font-size: 1.05rem; font-weight: 700; }
-    .step p { font-size: .9rem; color: var(--warm-muted); line-height: 1.65; }
+    .how-step-text h3 { font-size: 1.45rem; font-weight: 700; line-height: 1.25; letter-spacing: -.01em; }
+    .how-step-text p { font-size: .95rem; color: var(--warm-muted); line-height: 1.7; max-width: 380px; }
+    .how-step-img {
+      border-radius: 16px; overflow: hidden;
+      border: 1px solid var(--cream-border);
+      box-shadow: 0 12px 48px rgba(30,21,8,0.10), 0 4px 16px rgba(30,21,8,0.06);
+    }
+    .how-step-img .screen-bar { background: #1e2d4a; padding: 8px 12px; display: flex; align-items: center; gap: 5px; }
+    .how-step-img .screen-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .how-step-img img { width: 100%; display: block; aspect-ratio: 16/10; object-fit: cover; object-position: top; }
+    @media (max-width: 860px) {
+      .how-step { grid-template-columns: 1fr; gap: 28px; }
+      .how-step.flip { direction: ltr; }
+    }
 
     /* ── Screenshots ── */
     .screenshots { background: var(--cream-card); border-top: 1px solid var(--cream-border); border-bottom: 1px solid var(--cream-border); }
@@ -485,27 +498,76 @@
     <div class="section-label">How it works</div>
     <h2 class="section-title">From CV to matches<br />in under 90 seconds.</h2>
 
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">1</div>
-        <h3>Drop your CV</h3>
-        <p>Upload your PDF or Word CV. Chelsea reads it instantly and builds a profile of your experience, skills, and seniority.</p>
+    <div class="how-steps">
+
+      <!-- Step 1: text left, image right -->
+      <div class="how-step">
+        <div class="how-step-text">
+          <div class="how-step-num">1</div>
+          <h3>Drop your CV and Chelsea reads it instantly</h3>
+          <p>Upload your PDF or Word doc. Chelsea analyses your experience, seniority, and skills in seconds — no form-filling, no manual profile setup.</p>
+        </div>
+        <div class="how-step-img">
+          <div class="screen-bar">
+            <div class="screen-dot" style="background:#ff5f57;"></div>
+            <div class="screen-dot" style="background:#febc2e;"></div>
+            <div class="screen-dot" style="background:#28c840;"></div>
+          </div>
+          <img src="/static/screen1.jpg" alt="Chelsea reads your CV" />
+        </div>
       </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <h3>Quick conversation</h3>
-        <p>Chelsea asks a few focused questions: what you actually built, what you want next, any hard constraints. Or skip straight to search.</p>
+
+      <!-- Step 2: image left, text right -->
+      <div class="how-step flip">
+        <div class="how-step-text">
+          <div class="how-step-num">2</div>
+          <h3>A quick conversation to sharpen the search</h3>
+          <p>Chelsea asks a few focused questions about what you actually built, what you want next, and any hard constraints. Two minutes that make the results dramatically better. Or skip straight to the search.</p>
+        </div>
+        <div class="how-step-img">
+          <div class="screen-bar">
+            <div class="screen-dot" style="background:#ff5f57;"></div>
+            <div class="screen-dot" style="background:#febc2e;"></div>
+            <div class="screen-dot" style="background:#28c840;"></div>
+          </div>
+          <img src="/static/screen3.jpg" alt="Chelsea's smart intake conversation" />
+        </div>
       </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <h3>Chelsea hunts</h3>
-        <p>She searches Indeed, Adzuna, and Reed simultaneously, pulling hundreds of London listings and scoring each one against your profile with AI.</p>
+
+      <!-- Step 3: text left, image right -->
+      <div class="how-step">
+        <div class="how-step-text">
+          <div class="how-step-num">3</div>
+          <h3>Chelsea hunts across every major board</h3>
+          <p>She searches Indeed, Adzuna, and Reed simultaneously — hundreds of live London listings — and scores each one against your actual profile. You watch her work in real time.</p>
+        </div>
+        <div class="how-step-img">
+          <div class="screen-bar">
+            <div class="screen-dot" style="background:#ff5f57;"></div>
+            <div class="screen-dot" style="background:#febc2e;"></div>
+            <div class="screen-dot" style="background:#28c840;"></div>
+          </div>
+          <img src="/static/screen5.jpg" alt="Chelsea searching job boards in real time" />
+        </div>
       </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <h3>Your inbox, curated</h3>
-        <p>You get a ranked inbox of roles that genuinely fit, with match scores, salary data, and Chelsea's honest take on each one.</p>
+
+      <!-- Step 4: image left, text right -->
+      <div class="how-step flip">
+        <div class="how-step-text">
+          <div class="how-step-num">4</div>
+          <h3>Your inbox, ranked and ready</h3>
+          <p>You land on a curated shortlist — match scores, salary data, and Chelsea's honest read on each role. Click any job and she tells you exactly what maps from your CV and what the gaps are.</p>
+        </div>
+        <div class="how-step-img">
+          <div class="screen-bar">
+            <div class="screen-dot" style="background:#ff5f57;"></div>
+            <div class="screen-dot" style="background:#febc2e;"></div>
+            <div class="screen-dot" style="background:#28c840;"></div>
+          </div>
+          <img src="/static/screen6.jpg" alt="Your ranked job inbox" />
+        </div>
       </div>
+
     </div>
   </div>
 </section>
