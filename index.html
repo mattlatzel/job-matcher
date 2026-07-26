@@ -262,61 +262,90 @@
     .btn:disabled { background: #e2e8f0; color: var(--muted); cursor: not-allowed; }
 
     /* ── Progress ── */
-    .progress-card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 48px;
-      box-shadow: var(--shadow);
-      text-align: center;
-      border: 1px solid var(--border);
-      border-top: 3px solid var(--accent-cobalt);
-    }
-    .spinner {
-      width: 40px; height: 40px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent-cobalt);
-      border-radius: 50%;
-      animation: spin .8s linear infinite;
-      margin: 0 auto 24px;
-    }
+    /* ── Progress / Chelsea thinking ── */
     @keyframes spin { to { transform: rotate(360deg); } }
-    .progress-title {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 1.35rem;
-      font-weight: 700;
-      margin-bottom: 8px;
-      color: #0b1b2b;
-    }
-    .progress-sub { color: var(--muted); font-size: .95rem; }
+    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.8); } }
+    @keyframes thoughtIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
-    .steps { display: flex; justify-content: center; gap: 0; margin-top: 40px; }
-    .step {
-      display: flex; flex-direction: column; align-items: center;
-      flex: 1; max-width: 160px; position: relative;
+    #progress-section {
+      display: flex; flex-direction: column;
+      background: var(--bg);
+      overflow: hidden;
     }
-    .step:not(:last-child)::after {
-      content: '';
-      position: absolute; top: 15px; left: calc(50% + 15px);
-      width: calc(100% - 30px); height: 2px;
-      background: var(--border);
+
+    /* Step tracker strip at top */
+    .progress-steps-bar {
+      display: flex; align-items: center; gap: 0;
+      padding: 14px 24px;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
-    .step:not(:last-child).done::after { background: var(--accent-cobalt); }
-    .step-dot {
-      width: 30px; height: 30px;
-      border-radius: 50%;
+    .ps-step {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .78rem; font-weight: 600; color: var(--muted);
+      flex: 1;
+    }
+    .ps-step-dot {
+      width: 22px; height: 22px; border-radius: 50%;
       background: var(--border);
       display: flex; align-items: center; justify-content: center;
-      font-size: .8rem; font-weight: 700;
-      color: var(--muted);
-      position: relative; z-index: 1;
-      transition: all .3s;
-      border: 2px solid white;
+      font-size: .7rem; font-weight: 700; color: var(--muted);
+      flex-shrink: 0; transition: all .3s;
     }
-    .step.active .step-dot  { background: var(--accent-cobalt); color: white; box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.2); }
-    .step.done .step-dot    { background: var(--green);  color: white; }
-    .step-label { font-size: .8rem; color: var(--muted); margin-top: 8px; text-align: center; font-weight: 500; }
-    .step.active .step-label { color: var(--accent-cobalt); font-weight: 700; }
-    .step.done .step-label   { color: var(--green); font-weight: 600; }
+    .ps-step.active .ps-step-dot { background: var(--accent-cobalt); color: white; box-shadow: 0 0 0 3px rgba(0,86,179,.15); }
+    .ps-step.done   .ps-step-dot { background: var(--green); color: white; }
+    .ps-step.active .ps-step-label { color: var(--accent-cobalt); }
+    .ps-step.done   .ps-step-label { color: var(--green); }
+    .ps-step-connector { flex: 1; height: 2px; background: var(--border); margin: 0 4px; transition: background .3s; }
+    .ps-step.done + .ps-step-connector,
+    .ps-step-connector.done { background: var(--accent-cobalt); }
+
+    /* Chelsea thought feed */
+    .thought-feed {
+      flex: 1; overflow-y: auto; padding: 24px 24px 32px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .thought-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      animation: thoughtIn .35s ease both;
+    }
+    .thought-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      object-fit: cover; object-position: top;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+    }
+    .thought-bubble {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 0 12px 12px 12px;
+      padding: 10px 14px;
+      font-size: .9rem; line-height: 1.55;
+      color: var(--text);
+      max-width: 460px;
+      box-shadow: var(--shadow);
+    }
+    .thought-bubble.muted { color: var(--muted); font-style: italic; }
+    .thought-typing {
+      display: flex; align-items: center; gap: 5px;
+      padding: 10px 14px;
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 0 12px 12px 12px;
+      box-shadow: var(--shadow);
+    }
+    .thought-typing span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted);
+      animation: pulse 1.2s infinite;
+    }
+    .thought-typing span:nth-child(2) { animation-delay: .2s; }
+    .thought-typing span:nth-child(3) { animation-delay: .4s; }
+
+    /* Legacy compat — keep .progress-card hidden if referenced */
+    .progress-card, .progress-title, .progress-sub { display: none; }
+    .steps { display: none; }
+    .step-dot, .step-label { display: none; }
 
     /* ── Right panel inbox ── */
     .inbox-header {
@@ -820,18 +849,28 @@
         <p>Upload your CV in the chat on the left to start the matching process.</p>
       </div>
 
-      <!-- ── Progress ── -->
-      <section id="progress-section" class="hidden" style="flex:1; display:flex; align-items:center; justify-content:center; padding:48px 24px;">
-        <div class="progress-card">
-          <div class="spinner"></div>
-          <div class="progress-title" id="progress-title">Starting…</div>
-          <div class="progress-sub" id="progress-sub">This takes about 30–60 seconds</div>
-          <div class="steps" style="margin-top: 32px;">
-            <div class="step" id="step-1"><div class="step-dot">1</div><div class="step-label">Reading CV</div></div>
-            <div class="step" id="step-2"><div class="step-dot">2</div><div class="step-label">Finding Jobs</div></div>
-            <div class="step" id="step-3"><div class="step-dot">3</div><div class="step-label">AI Scoring</div></div>
+      <!-- ── Progress / Chelsea thinking ── -->
+      <section id="progress-section" class="hidden">
+        <!-- Step tracker strip -->
+        <div class="progress-steps-bar">
+          <div class="ps-step" id="ps-1">
+            <div class="ps-step-dot">1</div>
+            <span class="ps-step-label">Reading CV</span>
+          </div>
+          <div class="ps-step-connector" id="ps-conn-1"></div>
+          <div class="ps-step" id="ps-2">
+            <div class="ps-step-dot">2</div>
+            <span class="ps-step-label">Searching</span>
+          </div>
+          <div class="ps-step-connector" id="ps-conn-2"></div>
+          <div class="ps-step" id="ps-3">
+            <div class="ps-step-dot">3</div>
+            <span class="ps-step-label">Scoring</span>
           </div>
         </div>
+
+        <!-- Chelsea's live thoughts -->
+        <div class="thought-feed" id="thought-feed"></div>
       </section>
 
       <!-- ── Results ── -->
@@ -851,6 +890,12 @@
 
         <!-- Everything below scrolls -->
         <div class="inbox-scroll">
+
+          <!-- Streaming indicator -->
+          <div id="streaming-bar" class="hidden" style="display:flex; align-items:center; gap:8px; padding:8px 24px; background:#eff6ff; border-bottom:1px solid #dbeafe; font-size:.82rem; color:#1d4ed8; font-weight:600; flex-shrink:0;">
+            <div style="width:8px; height:8px; border-radius:50%; background:#3b82f6; animation:pulse 1.2s infinite;"></div>
+            Chelsea found <span id="streaming-count">0</span> matches so far — scoring more…
+          </div>
 
           <!-- Inbox header -->
           <div class="inbox-header">
@@ -954,8 +999,7 @@
   const chatFileInput   = document.getElementById('chat-file-input');
   const chatTextInput   = document.getElementById('chat-text');
   const chatSendBtn     = document.getElementById('chat-send-btn');
-  const progressTitle   = document.getElementById('progress-title');
-  const progressSub     = document.getElementById('progress-sub');
+  // progress-title / progress-sub removed — replaced by Chelsea thought feed
   const jobsList        = document.getElementById('jobs-list');
   const noResults       = document.getElementById('no-results');
   const loadMoreWrap    = document.getElementById('load-more-wrap');
@@ -1118,8 +1162,9 @@
     hideSkipBtn();
     disableInput();
     setTimeout(() => {
+      clearThoughts();
       show('progress');
-      setStep(1);
+      setStep(1, 'starting');
       pollTimer = setInterval(pollStatus, 2000);
     }, 1200);
   }
@@ -1224,26 +1269,104 @@
   });
 
   // ── Polling ───────────────────────────────────────────────────────────────
-  const STATUS_LABELS = {
-    starting:           ['Reading your CV…',        'Extracting your professional profile'],
-    extracting_profile: ['Reading your CV…',        'Understanding your experience and skills'],
-    fetching_jobs:      ['Searching job boards…',   'Querying live London listings'],
-    scoring:            ['AI scoring in progress…', 'Reasoning about fit — not just keywords'],
-    done:               ['All done!',               ''],
-    error:              ['Something went wrong',    ''],
-  };
   const STATUS_STEP = { starting:1, extracting_profile:1, fetching_jobs:2, scoring:3, done:3 };
+
+  let streamingStarted = false;
 
   async function pollStatus() {
     let data;
     try { const r = await fetch(`/api/status/${sessionId}`); data = await r.json(); } catch(e) { return; }
-    const [title, sub] = STATUS_LABELS[data.status] || ['Processing…', ''];
-    progressTitle.textContent = title;
-    if (sub) progressSub.textContent = sub;
-    setStep(STATUS_STEP[data.status] || 1, data.status);
     if (data.profile && !profile) profile = data.profile;
-    if (data.status === 'done')  { clearInterval(pollTimer); await loadResults(); }
+    setStep(STATUS_STEP[data.status] || 1, data.status);
+
+    if (data.status === 'scoring' || data.status === 'done') {
+      try {
+        const r2 = await fetch(`/api/results/${sessionId}`);
+        const partial = await r2.json();
+        const jobs = partial.jobs || [];
+        if (jobs.length > 0 && !streamingStarted) {
+          streamingStarted = true;
+          allJobs = jobs;
+          ruledOutJobs = partial.ruled_out || [];
+          thoughtOnFirstResults(jobs.filter(j => j.score >= 70).length);
+          showStreamingResults(partial);
+        } else if (jobs.length > allJobs.length) {
+          allJobs = jobs;
+          renderJobs();
+          updateStreamingCount(jobs.filter(j => j.score >= 70).length, data.status === 'done');
+        }
+      } catch(e) { /* ignore */ }
+    }
+
+    if (data.status === 'done') {
+      clearInterval(pollTimer);
+      if (!streamingStarted) {
+        await loadResults();
+      } else {
+        const r2 = await fetch(`/api/results/${sessionId}`);
+        const final = await r2.json();
+        allJobs = final.jobs || [];
+        ruledOutJobs = final.ruled_out || [];
+        renderJobs();
+        renderRuledOut();
+        updateStreamingCount(allJobs.filter(j => j.score >= 70).length, true);
+        finishStreaming(final);
+      }
+    }
     if (data.status === 'error') { clearInterval(pollTimer); alert('Error: ' + (data.error || 'Unknown')); show('initial'); }
+  }
+
+  function showStreamingResults(data) {
+    show('results');
+    if (profile) {
+      const exp = profile.years_experience ? `${profile.years_experience} yrs exp` : '';
+      profileText.textContent = [profile.current_title, exp].filter(Boolean).join(' · ');
+      profileBar.classList.remove('hidden');
+    }
+    // Show a "loading more…" count bar
+    const countBar = document.getElementById('streaming-bar');
+    if (countBar) {
+      countBar.classList.remove('hidden');
+    }
+    renderJobs();
+    updateStreamingCount(allJobs.length, false);
+  }
+
+  function updateStreamingCount(n, done) {
+    const bar = document.getElementById('streaming-bar');
+    if (!bar) return;
+    if (done) {
+      bar.classList.add('hidden');
+    } else {
+      bar.querySelector('#streaming-count').textContent = n;
+      bar.classList.remove('hidden');
+    }
+  }
+
+  function finishStreaming(data) {
+    const gaps = data.gap_analysis || [];
+    if (gaps.length > 0) {
+      gapList.innerHTML = gaps.map(g => `
+        <div class="gap-item">
+          <div class="gap-title">⚠ ${esc(g.gap)}</div>
+          <div class="gap-action">→ ${esc(g.action)}</div>
+        </div>`).join('');
+      gapTile.classList.remove('hidden');
+    }
+    const summary = data.search_summary || '';
+    if (summary) {
+      document.getElementById('search-summary-text').innerHTML = renderMarkdown(summary);
+      document.getElementById('search-tile').classList.remove('hidden');
+    }
+    renderRuledOut();
+    // Chelsea's wrap-up message
+    const n = allJobs.filter(j => j.score >= parseInt(slider.value)).length;
+    addMsg('assistant', `Right, I found ${n} match${n !== 1 ? 'es' : ''} for you. Have a look, and if anything feels off or you want me to cast the net differently, just tell me. I'm not done until you're happy with what you're seeing.`);
+    if (data.salary_insight) {
+      setTimeout(() => addMsg('assistant', data.salary_insight), 800);
+    }
+    enableInput();
+    chatTextInput.placeholder = 'Refine search or ask about your matches…';
   }
 
   // ── Load results ──────────────────────────────────────────────────────────
@@ -1614,21 +1737,123 @@
     }
   }
 
+  // ── Step tracker (new progress bar) ─────────────────────────────────────────
+  let _lastStep = 0;
   function setStep(active, status) {
     for (let i = 1; i <= 3; i++) {
-      const el = document.getElementById(`step-${i}`);
+      const el = document.getElementById(`ps-${i}`);
+      if (!el) continue;
       el.classList.remove('active','done');
-      if (i < active || (i === active && status === 'done')) el.classList.add('done');
+      if (i < active || status === 'done') el.classList.add('done');
       else if (i === active) el.classList.add('active');
     }
-    for (let i = 1; i <= 2; i++)
-      document.getElementById(`step-${i}`).classList.toggle('done', i < active || status === 'done');
+    for (let i = 1; i <= 2; i++) {
+      const conn = document.getElementById(`ps-conn-${i}`);
+      if (conn) conn.classList.toggle('done', i < active || status === 'done');
+    }
+    // Trigger step-change thoughts
+    if (active !== _lastStep) { _lastStep = active; onStepChange(active); }
+  }
+
+  // ── Chelsea thought engine ────────────────────────────────────────────────
+  let _thoughtQueue = [];
+  let _thoughtBusy  = false;
+  let _typingEl     = null;
+
+  function addThought(text, opts = {}) {
+    _thoughtQueue.push({ text, ...opts });
+    _drainThoughts();
+  }
+
+  async function _drainThoughts() {
+    if (_thoughtBusy || _thoughtQueue.length === 0) return;
+    _thoughtBusy = true;
+    while (_thoughtQueue.length > 0) {
+      const { text, delay = 0, muted = false } = _thoughtQueue.shift();
+      if (delay) await _sleep(delay);
+      _removeTyping();
+      _appendThought(text, muted);
+      await _sleep(320);
+    }
+    _thoughtBusy = false;
+  }
+
+  function _appendThought(text, muted) {
+    const feed = document.getElementById('thought-feed');
+    if (!feed) return;
+    const row = document.createElement('div');
+    row.className = 'thought-row';
+    row.innerHTML = `<img src="/static/Chelsea.jpg" class="thought-avatar" alt="Chelsea" />
+      <div class="thought-bubble${muted ? ' muted' : ''}">${text}</div>`;
+    feed.appendChild(row);
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  function _showTyping() {
+    const feed = document.getElementById('thought-feed');
+    if (!feed || _typingEl) return;
+    const row = document.createElement('div');
+    row.className = 'thought-row';
+    row.id = 'thought-typing-row';
+    row.innerHTML = `<img src="/static/Chelsea.jpg" class="thought-avatar" alt="Chelsea" />
+      <div class="thought-typing"><span></span><span></span><span></span></div>`;
+    feed.appendChild(row);
+    _typingEl = row;
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  function _removeTyping() {
+    if (_typingEl) { _typingEl.remove(); _typingEl = null; }
+  }
+
+  function _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function clearThoughts() {
+    _thoughtQueue = []; _thoughtBusy = false; _lastStep = 0;
+    _removeTyping();
+    const feed = document.getElementById('thought-feed');
+    if (feed) feed.innerHTML = '';
+  }
+
+  // ── Thoughts per step ────────────────────────────────────────────────────
+  function onStepChange(step) {
+    if (step === 1) {
+      _showTyping();
+      addThought("Let me read through your CV carefully…", { delay: 600 });
+      addThought("Getting a clear picture of your experience, skills, and where you sit in the market.", { delay: 1800 });
+    }
+    if (step === 2) {
+      // Profile is available at this point — personalise
+      const title   = profile?.current_title || 'your role';
+      const years   = profile?.years_experience ? `${profile.years_experience} years` : 'your experience';
+      const domain  = profile?.core_domain || 'your field';
+      const adj     = (profile?.adjacent_titles || []).slice(0, 2).join(' and ');
+      addThought(`Got it. You're a <strong>${title}</strong> with ${years} in ${domain}.`, { delay: 200 });
+      addThought("Now pulling live listings from Indeed, Adzuna, and Reed…", { delay: 1400 });
+      if (adj) addThought(`I'm searching for <strong>${title}</strong> roles but also casting wider — ${adj} — so I don't miss anything.`, { delay: 2600 });
+      _showTyping();
+    }
+    if (step === 3) {
+      const total = profile ? ` — that's a lot of listings to go through` : '';
+      addThought(`Okay, I have all the listings${total}. First pass: filtering out the obvious mismatches. Junior roles, wrong sector, that sort of thing.`, { delay: 300 });
+      addThought("Now running my full analysis on the best candidates. This is where I actually read each job description and compare it to your CV — not just keywords.", { delay: 2800 });
+      addThought("Almost there. Your first results should start appearing any moment…", { delay: 5500, muted: true });
+      _showTyping();
+    }
+  }
+
+  // Called when partial results start arriving during scoring
+  function thoughtOnFirstResults(n) {
+    _removeTyping();
+    addThought(`First results in! Found <strong>${n} strong matches</strong> so far. Still scoring more in the background…`);
   }
 
   function restart() {
     clearInterval(pollTimer);
-    sessionId = null; allJobs = []; visibleN = 10; profile = null;
-    isDocx = false; chatWaiting = false;
+    sessionId = null; allJobs = []; ruledOutJobs = []; visibleN = 10; profile = null;
+    isDocx = false; chatWaiting = false; streamingStarted = false;
+    clearThoughts();
+    document.getElementById('streaming-bar').classList.add('hidden');
     chatMessages.innerHTML = '';
     chatFileInput.value = '';
     disableInput();

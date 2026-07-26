@@ -279,13 +279,8 @@ async def fetch_jobs(profile: dict) -> list[dict]:
             _fetch_query(client, q, pages=p) for q, p in jsearch_queries
         ])
 
-    # Adzuna: sequential with small delay to avoid rate limiting
-    adzuna_results = []
-    for kw in adzuna_keywords:
-        result = await _fetch_adzuna(kw)
-        adzuna_results.append(result)
-        if result:
-            await asyncio.sleep(0.5)
+    # Adzuna: parallel (4 light requests, errors caught per-call)
+    adzuna_results = await asyncio.gather(*[_fetch_adzuna(kw) for kw in adzuna_keywords])
 
     # Reed: 2 broad keywords in parallel — great salary data + finance coverage
     reed_keywords = list(dict.fromkeys([_short(title)] + [_short(t) for t in adjacent_titles[:1]]))[:2]
@@ -923,23 +918,37 @@ async def process_cv(session_id: str, cv_text: str, conversation_messages: list 
         session["ruled_out"] = ruled_out
         print(f"✓ Pre-filter passed: {len(jobs)} jobs, ruled out: {len(ruled_out)}")
 
-        # 4. Haiku quick-rank → keep top 25 → Sonnet deep scoring
-        print("▶ Step 4: Deep scoring…")
-        ranked = await quick_score_all(ai_client, profile, jobs)
-        top_jobs = [job for job, _ in ranked[:25]]
+        # 4. Heuristic sort → keep top 25 → Sonnet deep scoring (streaming per batch)
+        print("▶ Step 4: Deep scoring (streaming)…")
+
+        def _title_relevance(job: dict) -> int:
+            jt = (job.get("job_title") or "").lower()
+            primary = (profile.get("current_title") or "").lower()
+            adjacent = [t.lower() for t in profile.get("adjacent_titles", [])]
+            # Strip seniority words for fuzzy matching
+            core = re.sub(r'\b(senior|junior|lead|principal|staff|head of|vp|associate|director)\b', '', primary).strip()
+            if primary and primary in jt:
+                return 4
+            if core and core in jt:
+                return 3
+            if any(t in jt for t in adjacent):
+                return 2
+            return 1
+
+        jobs.sort(key=_title_relevance, reverse=True)
+        top_jobs = jobs[:25]
 
         batches = [top_jobs[i:i+5] for i in range(0, len(top_jobs), 5)]
         sem = asyncio.Semaphore(6)
 
-        async def score_with_sem(batch):
+        async def score_and_stream_batch(batch):
             async with sem:
-                return await score_batch(ai_client, profile, batch)
+                results = await score_batch(ai_client, profile, batch)
+                session["results"].extend(results)
+                session["results"].sort(key=lambda x: x["score"], reverse=True)
 
-        batch_results = await asyncio.gather(*[score_with_sem(b) for b in batches])
-        all_results = [r for br in batch_results for r in br]
-        all_results.sort(key=lambda x: x["score"], reverse=True)
-        session["results"] = all_results
-        print(f"✓ Scored {len(all_results)} jobs")
+        await asyncio.gather(*[score_and_stream_batch(b) for b in batches])
+        print(f"✓ Scored {len(session['results'])} jobs")
 
         # 5. Gap analysis + salary insight (parallel)
         print("▶ Step 5: Gap analysis + salary benchmarking…")
