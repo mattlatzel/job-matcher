@@ -909,12 +909,15 @@
             </button>
           </div>
 
-          <!-- Profile tile -->
-          <div id="profile-bar" class="hidden" style="border-bottom:1px solid var(--border); background:#f8fafc; padding:10px 24px 14px;">
-            <div style="font-size:.72rem; font-weight:700; color:var(--accent-cobalt); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-crosshairs"></i> We are looking for…
+          <!-- Profile tile (collapsible) -->
+          <div id="profile-bar" class="hidden" style="border-bottom:1px solid var(--border); background:#fff;">
+            <div onclick="toggleProfileBar()" style="cursor:pointer; padding:10px 24px; font-size:.82rem; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+              <span style="font-size:.72rem; font-weight:700; color:var(--accent-cobalt); text-transform:uppercase; letter-spacing:.06em; display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-crosshairs"></i> We are looking for…
+              </span>
+              <i class="fa-solid fa-chevron-down" id="profile-chevron" style="font-size:.8rem; color:var(--muted); flex-shrink:0; transition:transform .2s;"></i>
             </div>
-            <div id="profile-expanded"></div>
+            <div id="profile-expanded" style="display:none; padding:0 24px 12px; background:#f8fafc;"></div>
           </div>
 
           <!-- Gap tile (collapsed) -->
@@ -1618,7 +1621,14 @@
     }
   }
 
-  function toggleProfileBar() { /* no-op: profile tile is always expanded */ }
+  function toggleProfileBar() {
+    const expanded = document.getElementById('profile-expanded');
+    const chevron  = document.getElementById('profile-chevron');
+    const nowOpen  = expanded.style.display === 'none';
+    expanded.style.display  = nowOpen ? 'block' : 'none';
+    chevron.style.transform = nowOpen ? 'rotate(180deg)' : '';
+    if (nowOpen) chelseyPanelReaction('[PANEL_OPENED: Profile] The candidate just opened the profile summary showing how Chelsea interpreted their CV.');
+  }
 
   // ── Gap tile toggle ───────────────────────────────────────────────────────
   function toggleGapTile() {
@@ -1825,6 +1835,8 @@
     gapList.innerHTML = '';
     profileBar.classList.add('hidden');
     document.getElementById('profile-expanded').innerHTML = '';
+    document.getElementById('profile-expanded').style.display = 'none';
+    document.getElementById('profile-chevron').style.transform = '';
     gapTile.classList.add('hidden');
     document.getElementById('gap-body').classList.add('hidden');
     document.getElementById('gap-chevron').style.transform = '';
