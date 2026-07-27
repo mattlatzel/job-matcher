@@ -874,7 +874,9 @@ JSON only. No prose."""
     text = next(b.text for b in resp.content if hasattr(b, "text")).strip()
     match = re.search(r"\{.*\}", text, re.DOTALL)
     raw = match.group() if match else text
-    return json.loads(raw, strict=False)  # strict=False tolerates control chars in strings
+    # Fix common LLM JSON quirks: trailing commas before } or ]
+    raw = re.sub(r",\s*([}\]])", r"\1", raw)
+    return json.loads(raw, strict=False)
 
 
 # ── Claude: Salary benchmarking ──────────────────────────────────────────────
